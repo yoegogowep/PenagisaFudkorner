@@ -80,7 +80,11 @@
         </section>
 
         <section class="home-order-bar" aria-label="Akses cepat pemesanan">
-            <div class="home-order-field"><i class="fa-solid fa-magnifying-glass"></i><span>Cari menu favoritmu</span></div>
+            <form class="home-order-field home-search-form" id="homeSearchForm">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input id="homeSearchInput" type="search" placeholder="Cari menu favoritmu" aria-label="Cari menu favoritmu" autocomplete="off">
+                <button type="submit" aria-label="Cari menu"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            </form>
             <div class="home-order-divider"></div>
             <div class="home-order-field"><i class="fa-solid fa-clock"></i><span>Siap diantar hari ini</span></div>
             <button class="home-order-btn" type="button" onclick="window.location.href='menu.html'">Pesan sekarang <i class="fa-solid fa-arrow-right"></i></button>

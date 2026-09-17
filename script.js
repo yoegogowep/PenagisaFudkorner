@@ -31,6 +31,7 @@ const DEFAULT_REVIEWS = [
 // ====== AKSES ADMIN TERSEMBUNYI ======
 // Ketuk pojok kiri atas layar loading 5x untuk memunculkan gerbang password admin.
 const ADMIN_PASSWORD = "676767";
+const ADMIN_SECRET_CODE = "4Loop67";
 const ADMIN_SESSION_KEY = "umkm_admin_access";
 const ADMIN_TAP_TARGET = 5;
 const ADMIN_TAP_WINDOW_MS = 1200;
@@ -879,6 +880,7 @@ function setupAdminGateTrigger() {
     if (!document.getElementById('gateAdminTrigger')) return;
 
     document.addEventListener('click', (event) => {
+        if (event.target.closest('.nav-hamburger, .nav-hamburger-panel')) return;
         if (event.clientX > 72 || event.clientY > 72) return;
 
         const now = Date.now();
@@ -1156,8 +1158,50 @@ function adminResetReviews() {
 function filterCategory(cat, btn) {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    if (cat === 'semua') renderMenu(menuItems);
-    else renderMenu(menuItems.filter(i => i.category === cat));
+    const searchInput = document.getElementById('menuSearchInput');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    const filteredItems = menuItems.filter((item) => {
+        const matchesCategory = cat === 'semua' || item.category === cat;
+        const searchableText = `${item.name} ${item.category} ${item.shortDesc}`.toLowerCase();
+        return matchesCategory && (!query || searchableText.includes(query));
+    });
+    renderMenu(filteredItems);
+}
+
+function filterMenuBySearch(query) {
+    const normalizedQuery = query.trim().toLowerCase();
+    const activeCategory = document.querySelector('.cat-btn.active')?.textContent.trim().toLowerCase();
+    const category = activeCategory === 'makanan' || activeCategory === 'minuman' ? activeCategory : 'semua';
+    const filteredItems = menuItems.filter((item) => {
+        const matchesCategory = category === 'semua' || item.category === category;
+        const searchableText = `${item.name} ${item.category} ${item.shortDesc}`.toLowerCase();
+        return matchesCategory && (!normalizedQuery || searchableText.includes(normalizedQuery));
+    });
+    renderMenu(filteredItems);
+}
+
+function setupMenuSearch() {
+    const menuSearchInput = document.getElementById('menuSearchInput');
+    if (menuSearchInput) {
+        const query = new URLSearchParams(window.location.search).get('search') || '';
+        menuSearchInput.value = query;
+        menuSearchInput.addEventListener('input', () => filterMenuBySearch(menuSearchInput.value));
+    }
+
+    const homeSearchForm = document.getElementById('homeSearchForm');
+    const homeSearchInput = document.getElementById('homeSearchInput');
+    if (homeSearchForm && homeSearchInput) {
+        homeSearchForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const query = homeSearchInput.value.trim();
+            if (query === ADMIN_SECRET_CODE) {
+                sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+                window.location.href = 'admin.html';
+                return;
+            }
+            window.location.href = `menu.html${query ? `?search=${encodeURIComponent(query)}` : ''}`;
+        });
+    }
 }
 
 // INIT
@@ -1231,7 +1275,10 @@ document.addEventListener("DOMContentLoaded", () => {
         updateOrderTypeFields();
     }
 
+    setupMenuSearch();
     renderMenu(menuItems);
+    const menuSearchInput = document.getElementById('menuSearchInput');
+    if (menuSearchInput && menuSearchInput.value) filterMenuBySearch(menuSearchInput.value);
     setupReviewForm();
     renderReviews();
     document.querySelectorAll('[data-close-review-thank-you]').forEach((button) => {
@@ -1275,7 +1322,59 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     setupHamburgerNavigation();
+    setupGalleryPage();
 });
+
+function setupGalleryPage() {
+    const galleryGrid = document.querySelector('.gallery-grid');
+    if (!galleryGrid) return;
+
+    const items = galleryGrid.querySelectorAll('.gallery-item');
+    const filters = document.querySelectorAll('[data-gallery-filter]');
+    const lightbox = document.getElementById('galleryLightbox');
+    const lightboxImage = document.getElementById('galleryLightboxImage');
+    const lightboxCaption = document.getElementById('galleryLightboxCaption');
+
+    filters.forEach((filter) => {
+        filter.addEventListener('click', () => {
+            const category = filter.dataset.galleryFilter;
+            filters.forEach((button) => button.classList.toggle('is-active', button === filter));
+            items.forEach((item) => {
+                item.hidden = category !== 'all' && item.dataset.galleryCategory !== category;
+            });
+        });
+    });
+
+    const closeLightbox = () => {
+        if (!lightbox) return;
+        lightbox.classList.remove('is-open');
+        lightbox.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('review-popup-open');
+    };
+
+    items.forEach((item) => {
+        const image = item.querySelector('img');
+        const viewButton = item.querySelector('.gallery-view-button');
+        if (!image || !viewButton || !lightbox || !lightboxImage || !lightboxCaption) return;
+
+        viewButton.addEventListener('click', () => {
+            lightboxImage.src = image.currentSrc || image.src;
+            lightboxImage.alt = image.alt;
+            lightboxCaption.textContent = item.querySelector('h3')?.textContent || image.alt;
+            lightbox.classList.add('is-open');
+            lightbox.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('review-popup-open');
+        });
+    });
+
+    document.querySelector('.gallery-lightbox-close')?.addEventListener('click', closeLightbox);
+    lightbox?.addEventListener('click', (event) => {
+        if (event.target === lightbox) closeLightbox();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeLightbox();
+    });
+}
 
 function setupHamburgerNavigation() {
     const navContainer = document.querySelector('.nav-container');
@@ -1290,6 +1389,7 @@ function setupHamburgerNavigation() {
         hamburgerButton.type = 'button';
         hamburgerButton.className = 'nav-hamburger';
         hamburgerButton.setAttribute('aria-label', 'Buka menu utama');
+        hamburgerButton.setAttribute('title', 'Buka menu utama');
         hamburgerButton.setAttribute('aria-expanded', 'false');
         hamburgerButton.innerHTML = `
             <span class="nav-hamburger-box" aria-hidden="true">
@@ -1307,6 +1407,14 @@ function setupHamburgerNavigation() {
         mobileNavPanel.className = 'nav-hamburger-panel';
         mobileNavPanel.setAttribute('aria-hidden', 'true');
 
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'nav-hamburger-close';
+        closeButton.setAttribute('aria-label', 'Tutup menu utama');
+        closeButton.setAttribute('title', 'Tutup menu utama');
+        closeButton.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+        mobileNavPanel.appendChild(closeButton);
+
         const profileWrap = document.createElement('div');
         profileWrap.className = 'nav-hamburger-profile';
         profileWrap.innerHTML = `
@@ -1319,9 +1427,10 @@ function setupHamburgerNavigation() {
         mobileNavPanel.appendChild(profileWrap);
 
         const pages = [
+            { text: 'Home', href: 'index.html' },
             { text: 'Menu', href: 'menu.html' },
             { text: 'Info', href: 'info.html' },
-            { text: 'Gallery', href: 'menu.html' },
+            { text: 'Gallery', href: 'gallery.html' },
             { text: 'Lokasi', href: 'alamat.html' },
             { text: 'Review', href: 'review.html' },
             { text: 'Kontak', href: 'kontak.html' }
@@ -1332,7 +1441,11 @@ function setupHamburgerNavigation() {
             link.href = page.href;
             link.textContent = page.text;
             link.className = 'nav-hamburger-link';
-            if (window.location.pathname.endsWith(page.href) && page.href !== 'menu.html') {
+            const isHomePage = page.text === 'Home' && (
+                window.location.pathname.endsWith('index.html') ||
+                window.location.pathname.endsWith('/')
+            );
+            if (isHomePage || window.location.pathname.endsWith(page.href)) {
                 link.classList.add('active');
             }
             if (page.text === 'Menu' && window.location.pathname.endsWith('menu.html')) {
@@ -1352,6 +1465,8 @@ function setupHamburgerNavigation() {
         hamburgerButton.classList.remove('is-open');
         mobileNavPanel.classList.remove('is-open');
         hamburgerButton.setAttribute('aria-expanded', 'false');
+        hamburgerButton.setAttribute('aria-label', 'Buka menu utama');
+        hamburgerButton.setAttribute('title', 'Buka menu utama');
         mobileNavPanel.setAttribute('aria-hidden', 'true');
     };
 
@@ -1360,6 +1475,8 @@ function setupHamburgerNavigation() {
         hamburgerButton.classList.toggle('is-open', isOpen);
         mobileNavPanel.classList.toggle('is-open', isOpen);
         hamburgerButton.setAttribute('aria-expanded', String(isOpen));
+        hamburgerButton.setAttribute('aria-label', isOpen ? 'Tutup menu utama' : 'Buka menu utama');
+        hamburgerButton.setAttribute('title', isOpen ? 'Tutup menu utama' : 'Buka menu utama');
         mobileNavPanel.setAttribute('aria-hidden', String(!isOpen));
     };
 
@@ -1368,8 +1485,13 @@ function setupHamburgerNavigation() {
         toggleHamburgerMenu();
     };
 
+    const closeButton = mobileNavPanel.querySelector('.nav-hamburger-close');
+    if (closeButton) closeButton.onclick = closeHamburgerMenu;
+
     mobileNavPanel.querySelectorAll('a').forEach((link) => {
-        link.addEventListener('click', () => closeHamburgerMenu());
+        link.addEventListener('click', () => {
+            closeHamburgerMenu();
+        });
     });
 
     document.addEventListener('click', (event) => {

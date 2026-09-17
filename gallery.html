@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery - Penagisa Food Corner</title>
+    <script>
+        if (localStorage.getItem('umkm_theme') === 'dark') {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+</head>
+<body>
+    <div class="gate-admin-trigger" id="gateAdminTrigger" aria-hidden="true" tabindex="-1"></div>
+
+    <div class="admin-gate-overlay" id="adminGateOverlay">
+        <div class="admin-gate-dialog">
+            <button class="admin-gate-close" id="adminGateClose" type="button" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+            <div class="admin-gate-icon"><i class="fa-solid fa-lock"></i></div>
+            <h2>Akses Admin</h2>
+            <p>Masukkan kata sandi untuk melanjutkan.</p>
+            <input type="password" id="adminGatePassword" class="admin-gate-input" placeholder="Kata sandi" inputmode="numeric" autocomplete="off">
+            <p class="admin-gate-error" id="adminGateError"></p>
+            <button class="admin-gate-submit" id="adminGateSubmit" type="button">Masuk</button>
+        </div>
+    </div>
+
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"> Penagisa Food Corner</a>
+            <nav class="nav-menu">
+                <span class="nav-indicator" aria-hidden="true"></span>
+                <a href="menu.html" class="nav-link">Menu</a>
+                <a href="info.html" class="nav-link">Info</a>
+                <a href="alamat.html" class="nav-link">Lokasi</a>
+                <a href="review.html" class="nav-link">Review</a>
+                <a href="kontak.html" class="nav-link">Kontak</a>
+            </nav>
+            <button class="cart-icon-btn" id="floatingCart" type="button" aria-label="Lihat pesanan" title="Lihat pesanan">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <span class="cart-badge" id="nav-cart-count">0</span>
+            </button>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Aktifkan mode gelap" title="Ganti tema">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="page-container gallery-page">
+        <section class="gallery-hero" aria-labelledby="galleryTitle">
+            <div>
+                <span class="gallery-kicker"><i class="fa-solid fa-camera-retro"></i> Cerita dalam setiap sajian</span>
+                <h1 class="page-title" id="galleryTitle">Gallery Rasa Penagisa</h1>
+                <p class="page-subtitle">Jelajahi tampilan menu favorit kami sebelum menentukan pesananmu.</p>
+            </div>
+            <div class="gallery-hero-mark" aria-hidden="true"><i class="fa-solid fa-bowl-food"></i></div>
+        </section>
+
+        <div class="gallery-toolbar">
+            <div>
+                <span class="gallery-kicker">Koleksi visual</span>
+                <h2>Yang Lagi Menggoda</h2>
+            </div>
+            <div class="gallery-filters" role="group" aria-label="Filter gallery">
+                <button class="gallery-filter is-active" type="button" data-gallery-filter="all">Semua</button>
+                <button class="gallery-filter" type="button" data-gallery-filter="makanan">Makanan</button>
+                <button class="gallery-filter" type="button" data-gallery-filter="minuman">Minuman</button>
+            </div>
+        </div>
+
+        <section class="gallery-grid" aria-label="Foto produk">
+            <article class="gallery-item gallery-item-featured" data-gallery-category="makanan">
+                <img src="https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=1200&q=85" alt="Gyoza Kuah" loading="eager">
+                <div class="gallery-item-overlay"><span>Favorit pelanggan</span><h3>Gyoza Kuah</h3><p>Hangat, gurih, dan lembut.</p></div>
+                <button class="gallery-view-button" type="button" aria-label="Lihat foto Gyoza Kuah"><i class="fa-solid fa-expand"></i></button>
+            </article>
+            <article class="gallery-item" data-gallery-category="minuman">
+                <img src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=85" alt="Cappucino Cincau" loading="lazy">
+                <div class="gallery-item-overlay"><span>Minuman segar</span><h3>Cappucino Cincau</h3><p>Manis, creamy, dan dingin.</p></div>
+                <button class="gallery-view-button" type="button" aria-label="Lihat foto Cappucino Cincau"><i class="fa-solid fa-expand"></i></button>
+            </article>
+            <article class="gallery-item" data-gallery-category="makanan">
+                <img src="https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=85" alt="Cilok Lava" loading="lazy">
+                <div class="gallery-item-overlay"><span>Pedasnya nagih</span><h3>Cilok Lava</h3><p>Kenyal dengan saus berani.</p></div>
+                <button class="gallery-view-button" type="button" aria-label="Lihat foto Cilok Lava"><i class="fa-solid fa-expand"></i></button>
+            </article>
+            <article class="gallery-item" data-gallery-category="makanan">
+                <img src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=85" alt="Cilok Clasik" loading="lazy">
+                <div class="gallery-item-overlay"><span>Teman santai</span><h3>Cilok Clasik</h3><p>Sederhana, hangat, dan akrab.</p></div>
+                <button class="gallery-view-button" type="button" aria-label="Lihat foto Cilok Clasik"><i class="fa-solid fa-expand"></i></button>
+            </article>
+            <article class="gallery-item gallery-item-wide" data-gallery-category="minuman">
+                <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=85" alt="Kopi susu dingin" loading="lazy">
+                <div class="gallery-item-overlay"><span>Jeda paling nikmat</span><h3>Teman Ngopi</h3><p>Pas untuk menemani obrolan sore.</p></div>
+                <button class="gallery-view-button" type="button" aria-label="Lihat foto Teman Ngopi"><i class="fa-solid fa-expand"></i></button>
+            </article>
+            <article class="gallery-item" data-gallery-category="makanan">
+                <img src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=85" alt="Sajian hangat" loading="lazy">
+                <div class="gallery-item-overlay"><span>Baru disajikan</span><h3>Hangat di Meja</h3><p>Aroma yang bikin ingin mencoba.</p></div>
+                <button class="gallery-view-button" type="button" aria-label="Lihat foto Hangat di Meja"><i class="fa-solid fa-expand"></i></button>
+            </article>
+        </section>
+
+        <section class="gallery-callout">
+            <div><span class="gallery-kicker">Sudah menemukan favorit?</span><h2>Lihat menu dan pesan sekarang.</h2></div>
+            <a class="primary-btn" href="menu.html">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+        </section>
+    </main>
+
+    <div class="gallery-lightbox" id="galleryLightbox" aria-hidden="true">
+        <button class="gallery-lightbox-close" type="button" aria-label="Tutup foto"><i class="fa-solid fa-xmark"></i></button>
+        <img id="galleryLightboxImage" src="" alt="">
+        <p id="galleryLightboxCaption"></p>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"></div>
+                <div><h3>Penagisa Food Corner</h3><p>Menu sehat, nikmat, dan siap dipesan.</p></div>
+            </div>
+            <div class="footer-contact">
+                <a href="https://wa.me/6282135783347" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                <a href="kontak.html"><i class="fa-solid fa-envelope"></i> Kontak</a>
+            </div>
+        </div>
+        <div class="footer-bottom"><p>© 2026 Penagisa Food Corner • Copyright by "XII PG 1"</p></div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
