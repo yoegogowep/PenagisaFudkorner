@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kontak - Stand XII GIM 1</title>
+    <script>
+        if (localStorage.getItem('umkm_theme') === 'dark') {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"> Penagisa Food Corner</a>
+            <nav class="nav-menu">
+                <span class="nav-indicator" aria-hidden="true"></span>
+                <a href="menu.html" class="nav-link">Menu</a>
+                <a href="info.html" class="nav-link">Info</a>
+                <a href="alamat.html" class="nav-link">Lokasi</a>
+                <a href="review.html" class="nav-link">Review</a>
+                <a href="kontak.html" class="nav-link active">Kontak</a>
+            </nav>
+            <button class="cart-icon-btn" id="floatingCart" type="button" aria-label="Lihat pesanan" title="Lihat pesanan">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <span class="cart-badge" id="nav-cart-count">0</span>
+            </button>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Aktifkan mode gelap" title="Ganti tema">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="page-container">
+        <h1 class="page-title">Hubungi Kami</h1>
+        <p class="page-subtitle">Siap melayani pertanyaan, katering pesanan khusus, maupun masukan pelanggan.</p>
+
+        <!-- Kartu Kontak Langsung -->
+        <div class="grid-2">
+            <div>
+                <h2 style="font-size:16px; margin-bottom:12px;">Kontak Cepat</h2>
+                <a href="https://wa.me/6282223346091" target="_blank" class="contact-card-btn">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="contact-icon" style="background:var(--primary);"><i class="fa-brands fa-whatsapp"></i></div>
+                        <div>
+                            <div style="font-weight:700; font-size:14px;">WhatsApp Customer Service</div>
+                            <div style="font-size:12px; color:var(--text-muted);">0822-2334-6091</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-arrow-right-long" style="color:var(--text-muted);"></i>
+                </a>
+
+                <a href="mailto:bazarpfcofficial@gmail.com" class="contact-card-btn">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="contact-icon" style="background:var(--primary);"><i class="fa-solid fa-envelope"></i></div>
+                        <div>
+                            <div style="font-weight:700; font-size:14px;">Email Resmi</div>
+                            <div style="font-size:12px; color:var(--text-muted);">bazarpfcofficial@gmail.com</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-arrow-right-long" style="color:var(--text-muted);"></i>
+                </a>
+
+                <a href="https://www.instagram.com/twelvegim.development?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw==" target="_blank" class="contact-card-btn">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="contact-icon" style="background:var(--primary);"><i class="fa-brands fa-instagram"></i></div>
+                        <div>
+                            <div style="font-weight:700; font-size:14px;">Instagram</div>
+                            <div style="font-size:12px; color:var(--text-muted);">@twelvegim.development</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-arrow-right-long" style="color:var(--text-muted);"></i>
+                </a>
+
+                <div class="share-website-card">
+                    <div class="share-website-heading">
+                        <div class="contact-icon"><i class="fa-solid fa-qrcode"></i></div>
+                        <div>
+                            <h3>Bagikan Website</h3>
+                            <p>Scan QR untuk membuka menu online kami.</p>
+                        </div>
+                    </div>
+                    <div class="website-qr" id="websiteQr" aria-label="QR code link website"></div>
+                    <button class="copy-link-btn" type="button" onclick="copyWebsiteLink()">
+                        <i class="fa-solid fa-copy"></i> Salin Link Website
+                    </button>
+                    <span class="copy-link-status" id="copyLinkStatus" role="status"></span>
+                </div>
+            </div>
+
+            <div>
+                <!-- Form Pesan Singkat -->
+                <div class="info-card">
+                <h3><i class="fa-solid fa-paper-plane"></i> Kirim Pesan / Kritik & Saran</h3>
+                <form id="feedbackForm" onsubmit="sendFeedbackToWhatsApp(event)">
+                     <div class="feedback-form-fields">
+                    <div class="form-group">
+                        <label>NAMA</label>
+                            <input type="text" id="feedbackName" placeholder="Nama Anda" required>
+                    </div>
+                    <div class="form-group">
+                        <label>EMAIL / WA</label>
+                            <input type="text" id="feedbackContact" placeholder="Nomor kontak Anda" required>
+                    </div>
+                    <div class="form-group">
+                        <label>PESAN</label>
+                            <textarea id="feedbackMessage" rows="3" placeholder="Tuliskan saran atau pertanyaan katering..." required></textarea>
+                    </div>
+                    <button type="submit" style="width:100%; background:var(--primary); color:white; border:none; padding:10px; border-radius:20px; font-weight:700; cursor:pointer;">Kirim Pesan</button>
+                     </div>
+                </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section FAQ (Pertanyaan Umum) -->
+        <h2 style="font-size:18px; margin:25px 0 15px;">Pertanyaan Sering Diajukan (FAQ)</h2>
+        
+        <div class="faq-item">
+            <div class="faq-title">Apakah menerima pesanan katering / nasi box jumlah besar?</div>
+            <div class="faq-desc">Ya! Kami menerima pesanan acara kantor, arisan, maupun ulang tahun. Harap memesan minimal H-2 melalui WhatsApp Customer Service kami.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-title">Berapa lama estimasi pengiriman makanan?</div>
+            <div class="faq-desc">Estimasi pengiriman berkisar antara 20–45 menit tergantung pada jarak lokasi pengantaran dan kondisi antrean dapur.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-title">Metode pembayaran apa saja yang tersedia?</div>
+            <div class="faq-desc">Kami menerima pembayaran Tunai (COD), Transfer Bank, serta E-Wallet (QRIS, GoPay, OVO, Dana) saat dikonfirmasi via WhatsApp.</div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP KERANJANG -->
+    <div class="modal-overlay" id="cartModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Rincian Pesanan</h3>
+                <button onclick="closeCartModal()" style="border:none; background:none; cursor:pointer; font-size:18px;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="cartItemsList"></div>
+            <div style="background:var(--bg-light); padding:15px; border-radius:12px; margin:15px 0;">
+                <div class="form-group">
+                    <label>NAMA PEMESAN</label>
+                    <input type="text" id="custName" placeholder="Contoh: Budi">
+                </div>
+                <div class="form-group">
+                    <label>OPSI PESANAN</label>
+                    <select id="orderType">
+                        <option value="Delivery">Delivery / Antar ke Rumah</option>
+                        <option value="Takeaway">Takeaway / Ambil Sendiri</option>
+                    </select>
+                </div>
+                <div class="form-group" id="addressGroup">
+                    <label id="addressLabel">ALAMAT LENGKAP</label>
+                    <textarea id="custAddress" rows="2" placeholder="Isi alamat rumah Anda"></textarea>
+                </div>
+            </div>
+            <button class="wa-submit-btn" onclick="sendOrderToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Pesan via WhatsApp</button>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"></div>
+                <div>
+                    <h3>Penagisa Food Corner</h3>
+                    <p>Menu sehat, nikmat, dan siap dipesan.</p>
+                </div>
+            </div>
+
+            <div class="footer-contact">
+                <a href="https://wa.me/6282223346091" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                <a href="kontak.html"><i class="fa-solid fa-location-dot"></i> Alamat</a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© 2026 Penagisa Food Corner • Copyright by "XII PG 1"</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

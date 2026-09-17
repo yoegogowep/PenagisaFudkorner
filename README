@@ -1,0 +1,99 @@
+# Penagisa Food Corner
+
+Website menu dan pemesanan online untuk Penagisa Food Corner.
+
+## Cara Menjalankan
+
+Buka `index.html` di browser atau jalankan melalui Live Server di VS Code.
+Website menggunakan beberapa CDN untuk Font Awesome, Google Fonts, dan QR Code, sehingga koneksi internet diperlukan agar semua aset tampil sempurna.
+
+## Bagian Yang Bisa Diubah
+
+### 1. Nomor WhatsApp Pemesanan
+
+Buka `script.js`, lalu ubah nilai berikut dengan format internasional tanpa tanda `+`:
+
+```js
+const NOMOR_WA_UMKM = "6282223346091";
+```
+
+Nomor ini digunakan untuk tombol pemesanan via WhatsApp.
+
+### 2. Data Menu Produk
+
+Masih di `script.js`, ubah isi array `menuItems` untuk mengatur:
+
+- Nama produk pada `name`
+- Kategori pada `category`, yaitu `makanan` atau `minuman`
+- Harga pada `price`
+- Deskripsi singkat pada `shortDesc`
+- Deskripsi lengkap pada `desc`
+- Bahan utama pada `ingredients`
+- Keunggulan produk pada `highlight`
+- Foto produk pada array `images`
+
+Contoh bagian produk:
+
+```js
+{
+	id: 1,
+	name: "Nama Produk",
+	category: "makanan",
+	price: 10000,
+	shortDesc: "Deskripsi singkat produk.",
+	desc: "Deskripsi lengkap produk.",
+	ingredients: ["Bahan 1", "Bahan 2"],
+	highlight: "Keunggulan produk.",
+	images: ["https://alamat-foto.com/produk.jpg"]
+}
+```
+
+### 3. Warna Dan Tampilan
+
+Buka `style.css`, lalu ubah variabel di bagian `:root`:
+
+- `--primary`: warna utama tombol dan aksen
+- `--primary-hover`: warna saat tombol diarahkan
+- `--primary-tint`: warna latar aksen
+- `--bg-white`: warna latar utama
+- `--bg-light`: warna latar sekunder
+- `--text-dark`: warna teks utama
+- `--text-muted`: warna teks pendukung
+
+### 4. Kontak Dan Media Sosial
+
+Buka `kontak.html`, lalu ubah:
+
+- Link WhatsApp pada atribut `href="https://wa.me/..."`
+- Nomor yang ditampilkan kepada pelanggan
+- Email pada atribut `href="mailto:..."`
+- Link Instagram pada atribut `href="https://www.instagram.com/..."`
+- Nama akun dan keterangan kontak
+
+### 5. Alamat Dan Peta
+
+Buka `alamat.html` untuk mengubah:
+
+- Alamat outlet
+- Jam operasional yang ditampilkan
+- Link Google Maps
+- Koordinat pada fungsi `openDirectionsTo()` dan `openDirectionsFromInput()`
+- URL iframe peta Google Maps
+
+### 6. Identitas Website
+
+Pada setiap file HTML, ubah jika diperlukan:
+
+- Isi tag `<title>` untuk judul tab browser
+- Nama `Penagisa Food Corner` pada logo, footer, dan teks halaman
+- Font Google Fonts pada bagian `<head>`
+
+### 7. QR Code Website
+
+QR Code berada di `kontak.html` dan dibuat otomatis oleh `script.js` menggunakan alamat website yang sedang dibuka. Jika website sudah diunggah ke hosting, QR Code akan mengarah ke alamat hosting tersebut.
+
+## Catatan
+
+- Keranjang belanja disimpan di `localStorage` browser.
+- Pesanan dikirim melalui WhatsApp dan tidak menggunakan database.
+- Form kontak saat ini hanya menampilkan notifikasi bahwa pesan telah terkirim; belum terhubung ke email atau server.

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu - Penagisa Food Corner</title>
+    <script>
+        if (localStorage.getItem('umkm_theme') === 'dark') {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"> Penagisa Food Corner</a>
+            <nav class="nav-menu">
+                <span class="nav-indicator" aria-hidden="true"></span>
+                <a href="menu.html" class="nav-link active">Menu</a>
+                <a href="info.html" class="nav-link">Info</a>
+                <a href="alamat.html" class="nav-link">Lokasi</a>
+                <a href="review.html" class="nav-link">Review</a>
+                <a href="kontak.html" class="nav-link">Kontak</a>
+            </nav>
+            <button class="cart-icon-btn" id="floatingCart" type="button" aria-label="Lihat pesanan" title="Lihat pesanan">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <span class="cart-badge" id="nav-cart-count">0</span>
+            </button>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Aktifkan mode gelap" title="Ganti tema">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="page-container">
+        <h2 class="page-title">Pilih Menu Favoritmu</h2>
+        <p class="page-subtitle">Santapan lezat buatan UMKM lokal, siap diantar atau diambil langsung.</p>
+
+        <div class="categories">
+            <button class="cat-btn active" onclick="filterCategory('semua', this)">Semua</button>
+            <button class="cat-btn" onclick="filterCategory('makanan', this)">Makanan</button>
+            <button class="cat-btn" onclick="filterCategory('minuman', this)">Minuman</button>
+        </div>
+
+        <div class="menu-grid" id="menuGrid"></div>
+        </section>
+    </main>
+
+    <!-- MODAL POPUP KERANJANG SIMPEL -->
+    <div class="modal-overlay" id="cartModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size:18px;">Rincian Pesanan</h3>
+                <div class="cart-header-actions">
+                    <button class="clear-cart-btn" onclick="clearCart()"><i class="fa-solid fa-trash-can"></i> Kosongkan</button>
+                    <button onclick="closeCartModal()" style="border:none; background:none; cursor:pointer; font-size:18px;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <div id="cartItemsList"></div>
+            
+            <div id="cartFormContainer">
+            <div style="background:var(--bg-light); padding:15px; border-radius:12px; margin:15px 0;">
+                <div class="form-group">
+                    <label>NAMA PEMESAN</label>
+                    <input type="text" id="custName" placeholder="Contoh: Budi">
+                </div>
+                <div class="form-group">
+                    <label>OPSI PESANAN</label>
+                    <select id="orderType">
+                        <option value="Delivery">Delivery / Antar ke Rumah</option>
+                        <option value="Takeaway">Takeaway / Ambil Sendiri</option>
+                    </select>
+                </div>
+                <div class="form-group" id="addressGroup">
+                    <label id="addressLabel">ALAMAT LENGKAP</label>
+                    <textarea id="custAddress" rows="2" placeholder="Isi alamat rumah Anda"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>CATATAN PESANAN <span style="font-weight:400; color:var(--text-muted);">(opsional)</span></label>
+                    <textarea id="orderNote" rows="2" placeholder="Contoh: sambal dipisah, tidak pedas"></textarea>
+                </div>
+            </div>
+
+            <button class="wa-submit-btn" onclick="sendOrderToWhatsApp()">
+                <i class="fa-brands fa-whatsapp"></i> Pesan via WhatsApp
+            </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="productModal" class="product-modal">
+        <div class="product-modal-backdrop" onclick="closeProductModal()"></div>
+        <div class="product-modal-content">
+            <button class="product-close" onclick="closeProductModal()" aria-label="Tutup detail menu">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="product-gallery">
+                <button class="gallery-nav gallery-prev" aria-label="Gambar sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+                <img class="product-main-image" src="" alt="Produk detail">
+                <button class="gallery-nav gallery-next" aria-label="Gambar berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
+                <div class="gallery-dots"></div>
+            </div>
+
+            <div class="product-details">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+                    <h3 class="product-name"></h3>
+                    <span class="product-price"></span>
+                </div>
+                <p class="product-desc"></p>
+                <div class="product-highlight-box">
+                    <strong>Kenapa pelanggan suka:</strong>
+                    <p class="product-highlight"></p>
+                </div>
+                <div class="ingredient-box">
+                    <h4>Bahan utama</h4>
+                    <ul class="ingredient-list"></ul>
+                </div>
+                <button class="product-add-btn"><i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"></div>
+                <div>
+                    <h3>Penagisa Food Corner</h3>
+                    <p>Menu sehat, nikmat, dan siap dipesan.</p>
+                </div>
+            </div>
+
+            <div class="footer-contact">
+                <a href="https://wa.me/6282135783347" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                <a href="kontak.html"><i class="fa-solid fa-location-dot"></i> Alamat</a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© 2026 Penagisa Food Corner • Copyright by "XII PG 1"</p>
+        </div>
+    </footer>
+</body>
+</html>

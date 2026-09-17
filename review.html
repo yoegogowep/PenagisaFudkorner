@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review - Penagisa Food Corner</title>
+    <script>
+        if (localStorage.getItem('umkm_theme') === 'dark') {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"> Penagisa Food Corner</a>
+            <nav class="nav-menu">
+                <span class="nav-indicator" aria-hidden="true"></span>
+                <a href="menu.html" class="nav-link">Menu</a>
+                <a href="info.html" class="nav-link">Info</a>
+                <a href="alamat.html" class="nav-link">Lokasi</a>
+                <a href="review.html" class="nav-link active">Review</a>
+                <a href="kontak.html" class="nav-link">Kontak</a>
+            </nav>
+            <button class="cart-icon-btn" id="floatingCart" type="button" aria-label="Lihat pesanan" title="Lihat pesanan">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <span class="cart-badge" id="nav-cart-count">0</span>
+            </button>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Aktifkan mode gelap" title="Ganti tema">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="page-container review-page">
+        <span class="review-eyebrow">Cerita pelanggan</span>
+        <h1 class="page-title">Review Makanan</h1>
+        <p class="page-subtitle">Lihat pengalaman pelanggan lain dan bagikan menu favoritmu.</p>
+
+        <div class="review-summary">
+            <div class="review-summary-score">
+                <strong>4.9</strong>
+                <div class="review-summary-stars" aria-label="Rating rata-rata 4.9 dari 5 bintang">★★★★★</div>
+                <span>Dari pelanggan Penagisa Food Corner</span>
+            </div>
+            <div class="review-summary-note">
+                <i class="fa-solid fa-heart"></i>
+                <p>Setiap ulasan membantu kami menyajikan makanan yang lebih baik.</p>
+            </div>
+        </div>
+
+        <div class="review-page-grid">
+            <section class="review-card" aria-labelledby="reviewListTitle">
+                <div class="review-heading">
+                    <div>
+                        <span class="review-eyebrow">Pilihan pelanggan</span>
+                        <h2 id="reviewListTitle">Yang Mereka Rasakan</h2>
+                    </div>
+                    <i class="fa-solid fa-comments review-heading-icon" aria-hidden="true"></i>
+                </div>
+                <div id="reviewList" class="review-list" aria-live="polite"></div>
+            </section>
+
+            <section class="review-card" aria-labelledby="reviewFormTitle">
+                <div class="review-heading">
+                    <div>
+                        <span class="review-eyebrow">Punya cerita?</span>
+                        <h2 id="reviewFormTitle">Tulis Review</h2>
+                    </div>
+                    <i class="fa-solid fa-pen review-heading-icon" aria-hidden="true"></i>
+                </div>
+                <p class="review-intro">Ceritakan rasa makanan yang kamu coba.</p>
+
+                <form id="reviewForm" class="review-form">
+                    <div class="form-group">
+                        <label for="reviewName">NAMA</label>
+                        <input type="text" id="reviewName" placeholder="Nama Anda" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reviewFood">MENU YANG DICOBA</label>
+                        <select id="reviewFood" required>
+                            <option value="">Pilih menu</option>
+                            <option>Cappucino Cincau</option>
+                            <option>Gyoza Kuah</option>
+                            <option>Cilok Lava</option>
+                            <option>Cilok Clasik</option>
+                        </select>
+                    </div>
+                    <fieldset class="rating-fieldset">
+                        <legend>RATING</legend>
+                        <div class="star-rating" role="radiogroup" aria-label="Pilih rating bintang">
+                            <button type="button" class="star-btn" data-rating="1" role="radio" aria-label="1 bintang"><i class="fa-solid fa-star"></i></button>
+                            <button type="button" class="star-btn" data-rating="2" role="radio" aria-label="2 bintang"><i class="fa-solid fa-star"></i></button>
+                            <button type="button" class="star-btn" data-rating="3" role="radio" aria-label="3 bintang"><i class="fa-solid fa-star"></i></button>
+                            <button type="button" class="star-btn" data-rating="4" role="radio" aria-label="4 bintang"><i class="fa-solid fa-star"></i></button>
+                            <button type="button" class="star-btn" data-rating="5" role="radio" aria-label="5 bintang"><i class="fa-solid fa-star"></i></button>
+                        </div>
+                        <input type="hidden" id="reviewRating" value="0">
+                    </fieldset>
+                    <div class="form-group">
+                        <label for="reviewMessage">ULASAN</label>
+                        <textarea id="reviewMessage" rows="4" placeholder="Bagaimana rasa makanannya?" required></textarea>
+                    </div>
+                    <button type="submit" class="review-submit"><i class="fa-solid fa-paper-plane"></i> Kirim Review</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <div class="review-thank-you" id="reviewThankYou" aria-hidden="true">
+        <div class="review-thank-you-backdrop" data-close-review-thank-you></div>
+        <section class="review-thank-you-dialog" role="dialog" aria-modal="true" aria-labelledby="thankYouTitle">
+            <button class="review-thank-you-close" type="button" data-close-review-thank-you aria-label="Tutup pesan">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="thank-you-icon"><i class="fa-solid fa-check"></i></div>
+            <span class="review-eyebrow">Review diterima</span>
+            <h2 id="thankYouTitle">Terima kasih telah melakukan review!</h2>
+            <p>Ulasanmu sudah tercatat dan akan membantu pelanggan lain memilih menu favoritnya.</p>
+            <button class="review-thank-you-button" type="button" data-close-review-thank-you>Lihat Review Saya</button>
+        </section>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"></div>
+                <div>
+                    <h3>Penagisa Food Corner</h3>
+                    <p>Menu sehat, nikmat, dan siap dipesan.</p>
+                </div>
+            </div>
+            <div class="footer-contact">
+                <a href="https://wa.me/6282135783347" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                <a href="kontak.html"><i class="fa-solid fa-envelope"></i> Kontak</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Penagisa Food Corner • Copyright by "XII PG 1"</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
