@@ -15,6 +15,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
 </head>
 <body class="home-page">
 
@@ -26,6 +28,21 @@
             <div class="gate-loader" aria-hidden="true">
                 <span></span><span></span><span></span>
             </div>
+        </div>
+    </div>
+
+    <div class="gate-admin-trigger" id="gateAdminTrigger" aria-hidden="true" tabindex="-1"></div>
+
+    <!-- GERBANG AKSES ADMIN (tersembunyi, hanya diketahui admin) -->
+    <div class="admin-gate-overlay" id="adminGateOverlay">
+        <div class="admin-gate-dialog">
+            <button class="admin-gate-close" id="adminGateClose" type="button" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+            <div class="admin-gate-icon"><i class="fa-solid fa-lock"></i></div>
+            <h2>Akses Admin</h2>
+            <p>Masukkan kata sandi untuk melanjutkan.</p>
+            <input type="password" id="adminGatePassword" class="admin-gate-input" placeholder="Kata sandi" inputmode="numeric" autocomplete="off">
+            <p class="admin-gate-error" id="adminGateError"></p>
+            <button class="admin-gate-submit" id="adminGateSubmit" type="button">Masuk</button>
         </div>
     </div>
 

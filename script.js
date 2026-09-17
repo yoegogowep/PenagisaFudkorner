@@ -28,6 +28,79 @@ const DEFAULT_REVIEWS = [
     }
 ];
 
+// ====== AKSES ADMIN TERSEMBUNYI ======
+// Ketuk pojok kiri atas layar loading 5x untuk memunculkan gerbang password admin.
+const ADMIN_PASSWORD = "676767";
+const ADMIN_SESSION_KEY = "umkm_admin_access";
+const ADMIN_TAP_TARGET = 5;
+const ADMIN_TAP_WINDOW_MS = 1200;
+let adminTapCount = 0;
+let adminTapLastTime = 0;
+
+const supabaseClient = window.supabase && window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.anonKey
+    ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey)
+    : null;
+
+function getVisitorId() {
+    let visitorId = localStorage.getItem('umkm_visitor_id');
+    if (!visitorId) {
+        visitorId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem('umkm_visitor_id', visitorId);
+    }
+    return visitorId;
+}
+
+function getDeviceType() {
+    if (window.matchMedia('(max-width: 600px)').matches) return 'mobile';
+    if (window.matchMedia('(max-width: 1024px)').matches) return 'tablet';
+    return 'desktop';
+}
+
+async function recordAudienceClick() {
+    if (!supabaseClient) return;
+
+    await supabaseClient.from('link_clicks').insert({
+        link_url: window.location.href,
+        source: new URLSearchParams(window.location.search).get('utm_source') || 'direct',
+        referrer: document.referrer || null,
+        visitor_id: getVisitorId(),
+        device_type: getDeviceType(),
+        user_agent: navigator.userAgent
+    });
+}
+
+async function saveCommentToDatabase(comment) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.from('comments').insert({ ...comment, status: 'pending' });
+    if (error) console.error('Komentar gagal disimpan ke database:', error);
+}
+
+async function loadCommentsFromDatabase() {
+    if (!supabaseClient) return;
+    const { data, error } = await supabaseClient
+        .from('comments')
+        .select('name, food, rating, message')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
+    if (!error && data?.length) {
+        localStorage.setItem('umkm_reviews', JSON.stringify(data));
+        renderReviews();
+    }
+}
+
+async function saveOrderToDatabase(order, items) {
+    if (!supabaseClient) return;
+    const { data, error } = await supabaseClient.from('sales_orders').insert(order).select('id').single();
+    if (error || !data) {
+        console.error('Pesanan gagal disimpan ke database:', error);
+        return;
+    }
+    const { error: itemError } = await supabaseClient.from('sales_order_items').insert(
+        items.map(item => ({ ...item, order_id: data.id }))
+    );
+    if (itemError) console.error('Detail pesanan gagal disimpan:', itemError);
+}
+
 function applyTheme(theme) {
     const isDark = theme === 'dark';
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
@@ -409,12 +482,34 @@ function sendFeedbackToWhatsApp(event) {
     document.getElementById('feedbackForm').reset();
 }
 
+function getReviewAverage(reviews) {
+    if (!reviews.length) return 1;
+
+    const totalRating = reviews.reduce((sum, review) => sum + Number(review.rating), 0);
+    return Math.min(5, Math.max(1, totalRating / reviews.length));
+}
+
+function renderReviewSummary(reviews) {
+    const averageRating = getReviewAverage(reviews);
+    const averageRatingText = averageRating.toFixed(1);
+    const averageRatingElement = document.getElementById('reviewAverageRating');
+    const averageStarsElement = document.getElementById('reviewAverageStars');
+
+    if (averageRatingElement) averageRatingElement.textContent = averageRatingText;
+    if (averageStarsElement) {
+        const filledStars = Math.round(averageRating);
+        averageStarsElement.textContent = '★'.repeat(filledStars) + '☆'.repeat(5 - filledStars);
+        averageStarsElement.setAttribute('aria-label', `Rating rata-rata ${averageRatingText} dari 5 bintang`);
+    }
+}
+
 function renderReviews(highlightLatest = false) {
     const reviewList = document.getElementById('reviewList');
     if (!reviewList) return;
 
     const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
     const reviews = storedReviews.length > 0 ? storedReviews : DEFAULT_REVIEWS;
+    renderReviewSummary(reviews);
     reviewList.innerHTML = '';
 
     if (reviews.length === 0) {
@@ -459,7 +554,7 @@ function setupReviewForm() {
         });
     });
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const rating = Number(ratingInput.value);
         if (!rating) {
@@ -467,15 +562,17 @@ function setupReviewForm() {
             return;
         }
 
-        const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
-        const reviews = storedReviews.length > 0 ? storedReviews : [...DEFAULT_REVIEWS];
-        reviews.unshift({
+        const comment = {
             name: document.getElementById('reviewName').value.trim(),
             food: document.getElementById('reviewFood').value,
             rating,
             message: document.getElementById('reviewMessage').value.trim()
-        });
+        };
+        const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
+        const reviews = storedReviews.length > 0 ? storedReviews : [...DEFAULT_REVIEWS];
+        reviews.unshift(comment);
         localStorage.setItem('umkm_reviews', JSON.stringify(reviews));
+        await saveCommentToDatabase(comment);
         form.reset();
         ratingInput.value = '0';
         stars.forEach((button) => button.classList.remove('is-selected'));
@@ -670,7 +767,7 @@ function showInlineAlert(message, duration = 3000) {
 }
 
 // KIRIM KE WHATSAPP
-function sendOrderToWhatsApp() {
+async function sendOrderToWhatsApp() {
     const name = document.getElementById("custName").value.trim();
     const type = document.getElementById("orderType").value;
     const addressInput = document.getElementById("custAddress");
@@ -688,6 +785,16 @@ function sendOrderToWhatsApp() {
         if (addressInput) addressInput.focus();
         return;
     }
+
+    const orderItems = Object.keys(cart).map(id => {
+        const item = menuItems.find(menuItem => menuItem.id == id);
+        return {
+            product_id: item.id,
+            product_name: item.name,
+            quantity: cart[id],
+            unit_price: item.price
+        };
+    });
 
     let text = `*PESANAN BARU - Penagisa Food Corner* 🍽️\n\n`;
     text += `*Rincian Pesanan:*\n`;
@@ -712,6 +819,15 @@ function sendOrderToWhatsApp() {
     if (note) text += `*Catatan:* ${note}\n`;
     text += `\n`;
     text += `Mohon konfirmasi pesanan ini. Terima kasih!`;
+
+    await saveOrderToDatabase({
+        customer_name: name,
+        order_type: type,
+        address: type === 'Delivery' ? address : null,
+        note: note || null,
+        total_amount: total,
+        whatsapp_sent_at: new Date().toISOString()
+    }, orderItems);
 
     window.open(`https://wa.me/${NOMOR_WA_UMKM}?text=${encodeURIComponent(text)}`, '_blank');
 }
@@ -755,6 +871,287 @@ function openDirectionsFromInput(destLat, destLng) {
     openDirectionsTo(destLat, destLng);
 }
 
+
+// ====== FUNGSI AKSES ADMIN TERSEMBUNYI ======
+
+// Pasang listener ketuk 5x di pojok kiri atas setiap halaman
+function setupAdminGateTrigger() {
+    if (!document.getElementById('gateAdminTrigger')) return;
+
+    document.addEventListener('click', (event) => {
+        if (event.clientX > 72 || event.clientY > 72) return;
+
+        const now = Date.now();
+        if (now - adminTapLastTime > ADMIN_TAP_WINDOW_MS) {
+            adminTapCount = 0;
+        }
+        adminTapLastTime = now;
+        adminTapCount += 1;
+
+        if (adminTapCount >= ADMIN_TAP_TARGET) {
+            adminTapCount = 0;
+            openAdminGate();
+        }
+    });
+}
+
+function openAdminGate() {
+    const overlay = document.getElementById('adminGateOverlay');
+    if (!overlay) return;
+
+    overlay.classList.add('active');
+    const input = document.getElementById('adminGatePassword');
+    const error = document.getElementById('adminGateError');
+    if (error) error.textContent = '';
+    if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 50);
+    }
+}
+
+// Menutup gerbang password. Di admin.html, menutup gerbang tanpa berhasil
+// login akan mengembalikan pengunjung ke halaman utama.
+function closeAdminGate() {
+    const overlay = document.getElementById('adminGateOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+
+    const dashboard = document.getElementById('adminDashboard');
+    if (dashboard && sessionStorage.getItem(ADMIN_SESSION_KEY) !== 'true') {
+        window.location.href = 'index.html';
+    }
+}
+
+function submitAdminGate() {
+    const input = document.getElementById('adminGatePassword');
+    const error = document.getElementById('adminGateError');
+    const value = input ? input.value.trim() : '';
+
+    if (value !== ADMIN_PASSWORD) {
+        if (error) error.textContent = 'Kata sandi salah. Coba lagi.';
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+        return;
+    }
+
+    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+
+    // Jika sudah berada di dashboard (admin.html), langsung buka kontennya.
+    // Jika belum (misal dari layar loading di index.html), arahkan ke dashboard.
+    const dashboard = document.getElementById('adminDashboard');
+    if (dashboard) {
+        unlockAdminDashboard();
+    } else {
+        window.location.href = 'admin.html';
+    }
+}
+
+function setupAdminGateModal() {
+    const overlay = document.getElementById('adminGateOverlay');
+    if (!overlay) return;
+
+    const closeBtn = document.getElementById('adminGateClose');
+    const submitBtn = document.getElementById('adminGateSubmit');
+    const input = document.getElementById('adminGatePassword');
+
+    if (closeBtn) closeBtn.addEventListener('click', closeAdminGate);
+    if (submitBtn) submitBtn.addEventListener('click', submitAdminGate);
+    if (input) {
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') submitAdminGate();
+        });
+    }
+    overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) closeAdminGate();
+    });
+}
+
+function unlockAdminDashboard() {
+    const overlay = document.getElementById('adminGateOverlay');
+    if (overlay) overlay.classList.remove('active');
+
+    const dashboard = document.getElementById('adminDashboard');
+    if (dashboard) dashboard.classList.add('is-visible');
+
+    renderAdminReviews();
+    renderAdminStats();
+    loadAdminDatabaseData();
+}
+
+// Jalan khusus saat berada di admin.html: cek sesi, tampilkan dashboard
+// atau munculkan gerbang password jika belum login.
+function initAdminPage() {
+    const dashboard = document.getElementById('adminDashboard');
+    if (!dashboard) return;
+
+    if (sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true') {
+        dashboard.classList.add('is-visible');
+        renderAdminReviews();
+        renderAdminStats();
+        loadAdminDatabaseData();
+    } else {
+        openAdminGate();
+    }
+}
+
+function adminLogout() {
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    window.location.href = 'index.html';
+}
+
+// Toast ringkas untuk aksi di dashboard admin (pakai gaya visual .inline-alert)
+function showAdminToast(title, message, duration = 2600) {
+    const existing = document.querySelector('.inline-alert');
+    if (existing) existing.remove();
+
+    const el = document.createElement('div');
+    el.className = 'inline-alert';
+    el.innerHTML = '<strong></strong><span></span>';
+    el.querySelector('strong').textContent = title;
+    el.querySelector('span').textContent = message;
+    el.setAttribute('role', 'status');
+    el.addEventListener('click', () => {
+        el.classList.add('hide');
+        setTimeout(() => el.remove(), 220);
+    });
+    document.body.appendChild(el);
+
+    el._hideTimer = setTimeout(() => {
+        el.classList.add('hide');
+        setTimeout(() => el.remove(), 220);
+    }, duration);
+}
+
+function renderAdminReviews() {
+    const list = document.getElementById('adminReviewList');
+    if (!list) return;
+
+    const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
+    const reviews = storedReviews.length > 0 ? storedReviews : DEFAULT_REVIEWS;
+    list.innerHTML = '';
+
+    if (reviews.length === 0) {
+        list.innerHTML = '<p class="review-empty">Belum ada review.</p>';
+        return;
+    }
+
+    reviews.forEach((review, index) => {
+        const row = document.createElement('div');
+        row.className = 'admin-review-row';
+        row.innerHTML = `
+            <div class="admin-review-info">
+                <div class="admin-review-top">
+                    <strong></strong>
+                    <span class="admin-review-stars"></span>
+                </div>
+                <div class="admin-review-food"></div>
+                <p class="admin-review-message"></p>
+            </div>
+            <button class="admin-review-delete" type="button" aria-label="Hapus review">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        `;
+        row.querySelector('strong').textContent = review.name;
+        row.querySelector('.admin-review-stars').textContent = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+        row.querySelector('.admin-review-food').textContent = review.food;
+        row.querySelector('.admin-review-message').textContent = review.message;
+        row.querySelector('.admin-review-delete').addEventListener('click', () => deleteAdminReview(index));
+        list.appendChild(row);
+    });
+}
+
+function deleteAdminReview(index) {
+    const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
+    const reviews = storedReviews.length > 0 ? storedReviews : [...DEFAULT_REVIEWS];
+    reviews.splice(index, 1);
+    localStorage.setItem('umkm_reviews', JSON.stringify(reviews));
+    renderAdminReviews();
+    renderAdminStats();
+    showAdminToast('Berhasil', 'Review telah dihapus.');
+}
+
+function renderAdminStats() {
+    const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
+    const reviews = storedReviews.length > 0 ? storedReviews : DEFAULT_REVIEWS;
+    const totalReviews = reviews.length;
+    const avgRating = totalReviews > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews) : 0;
+    const totalMenu = menuItems.filter(item => !item.comingSoon).length;
+
+    const statTotalReviews = document.getElementById('statTotalReviews');
+    const statAvgRating = document.getElementById('statAvgRating');
+    const statTotalMenu = document.getElementById('statTotalMenu');
+
+    if (statTotalReviews) statTotalReviews.textContent = totalReviews;
+    if (statAvgRating) statAvgRating.textContent = avgRating.toFixed(1);
+    if (statTotalMenu) statTotalMenu.textContent = totalMenu;
+}
+
+async function loadAdminDatabaseData() {
+    const status = document.getElementById('databaseStatus');
+    const ordersList = document.getElementById('databaseOrdersList');
+    if (!status || !ordersList) return;
+
+    if (!supabaseClient) {
+        status.textContent = 'Supabase belum dikonfigurasi. Isi supabase-config.js terlebih dahulu.';
+        return;
+    }
+
+    const [dashboardResult, ordersResult] = await Promise.all([
+        supabaseClient.from('admin_dashboard').select('*').single(),
+        supabaseClient.from('sales_orders').select('created_at, customer_name, order_type, status, total_amount').order('created_at', { ascending: false }).limit(10)
+    ]);
+
+    if (dashboardResult.error || ordersResult.error) {
+        status.textContent = 'Database terhubung, tetapi belum bisa dibaca. Jalankan database.sql dan periksa policy Supabase.';
+        console.error('Data dashboard gagal dimuat:', dashboardResult.error || ordersResult.error);
+        return;
+    }
+
+    const summary = dashboardResult.data;
+    document.getElementById('dbTotalClicks').textContent = summary.total_link_clicks ?? 0;
+    document.getElementById('dbTotalOrders').textContent = summary.total_orders ?? 0;
+    document.getElementById('dbTotalSales').textContent = `Rp ${Number(summary.total_sales || 0).toLocaleString('id-ID')}`;
+    status.textContent = `Terakhir diperbarui ${new Date().toLocaleString('id-ID')}. Menampilkan 10 pesanan terbaru.`;
+
+    ordersList.innerHTML = '';
+    if (!ordersResult.data.length) {
+        ordersList.innerHTML = '<tr><td colspan="5">Belum ada pesanan di database.</td></tr>';
+        return;
+    }
+
+    ordersResult.data.forEach(order => {
+        const row = document.createElement('tr');
+        [
+            new Date(order.created_at).toLocaleString('id-ID'),
+            order.customer_name,
+            order.order_type,
+            order.status,
+            `Rp ${Number(order.total_amount || 0).toLocaleString('id-ID')}`
+        ].forEach(value => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+        ordersList.appendChild(row);
+    });
+}
+
+function adminResetCart() {
+    localStorage.removeItem('umkm_cart');
+    cart = {};
+    updateCartUI();
+    showAdminToast('Berhasil', 'Keranjang belanja sudah dikosongkan.');
+}
+
+function adminResetReviews() {
+    localStorage.removeItem('umkm_reviews');
+    renderAdminReviews();
+    renderAdminStats();
+    showAdminToast('Berhasil', 'Review dikembalikan ke data contoh.');
+}
+
 // RUN SAAT LOKASI KATEGORI/SEARCH
 function filterCategory(cat, btn) {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
@@ -766,6 +1163,9 @@ function filterCategory(cat, btn) {
 // INIT
 document.addEventListener("DOMContentLoaded", () => {
     applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+    setupHamburgerNavigation();
+    recordAudienceClick();
+    loadCommentsFromDatabase();
 
     const websiteQr = document.getElementById('websiteQr');
     if (websiteQr && typeof QRCode !== 'undefined') {
@@ -809,6 +1209,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    setupAdminGateTrigger();
+    setupAdminGateModal();
+    initAdminPage();
+
     const gate = document.getElementById('gateScreen');
 
     if (gate && !sessionStorage.getItem('umkm_gate_shown')) {
@@ -848,6 +1252,7 @@ document.addEventListener("DOMContentLoaded", () => {
         closeReviewThankYou();
         closeCartModal();
         closeProductModal();
+        closeAdminGate();
     });
     updateCartUI();
     if (Object.keys(cart).length > 0) refreshCartActivity();
@@ -868,4 +1273,112 @@ document.addEventListener("DOMContentLoaded", () => {
         orderSelect.addEventListener('change', updateAddressVisibility);
         updateAddressVisibility();
     }
+
+    setupHamburgerNavigation();
 });
+
+function setupHamburgerNavigation() {
+    const navContainer = document.querySelector('.nav-container');
+    if (!navContainer) return;
+
+    const navMenu = document.querySelector('.nav-menu');
+    if (navMenu) navMenu.style.display = 'none';
+
+    let hamburgerButton = document.querySelector('.nav-hamburger');
+    if (!hamburgerButton) {
+        hamburgerButton = document.createElement('button');
+        hamburgerButton.type = 'button';
+        hamburgerButton.className = 'nav-hamburger';
+        hamburgerButton.setAttribute('aria-label', 'Buka menu utama');
+        hamburgerButton.setAttribute('aria-expanded', 'false');
+        hamburgerButton.innerHTML = `
+            <span class="nav-hamburger-box" aria-hidden="true">
+                <span class="nav-hamburger-line"></span>
+                <span class="nav-hamburger-line"></span>
+                <span class="nav-hamburger-line"></span>
+            </span>
+        `;
+        navContainer.insertBefore(hamburgerButton, navContainer.firstChild);
+    }
+
+    let mobileNavPanel = document.querySelector('.nav-hamburger-panel');
+    if (!mobileNavPanel) {
+        mobileNavPanel = document.createElement('div');
+        mobileNavPanel.className = 'nav-hamburger-panel';
+        mobileNavPanel.setAttribute('aria-hidden', 'true');
+
+        const profileWrap = document.createElement('div');
+        profileWrap.className = 'nav-hamburger-profile';
+        profileWrap.innerHTML = `
+            <div class="nav-hamburger-avatar">P</div>
+            <div class="nav-hamburger-profile-meta">
+                <span>Profile</span>
+                <strong>Penagisa User</strong>
+            </div>
+        `;
+        mobileNavPanel.appendChild(profileWrap);
+
+        const pages = [
+            { text: 'Menu', href: 'menu.html' },
+            { text: 'Info', href: 'info.html' },
+            { text: 'Gallery', href: 'menu.html' },
+            { text: 'Lokasi', href: 'alamat.html' },
+            { text: 'Review', href: 'review.html' },
+            { text: 'Kontak', href: 'kontak.html' }
+        ];
+
+        pages.forEach((page, index) => {
+            const link = document.createElement('a');
+            link.href = page.href;
+            link.textContent = page.text;
+            link.className = 'nav-hamburger-link';
+            if (window.location.pathname.endsWith(page.href) && page.href !== 'menu.html') {
+                link.classList.add('active');
+            }
+            if (page.text === 'Menu' && window.location.pathname.endsWith('menu.html')) {
+                link.classList.add('active');
+            }
+            if (page.text === 'Gallery') {
+                link.setAttribute('data-gallery-link', 'true');
+            }
+            link.style.animationDelay = `${index * 0.06}s`;
+            mobileNavPanel.appendChild(link);
+        });
+
+        navContainer.appendChild(mobileNavPanel);
+    }
+
+    const closeHamburgerMenu = () => {
+        hamburgerButton.classList.remove('is-open');
+        mobileNavPanel.classList.remove('is-open');
+        hamburgerButton.setAttribute('aria-expanded', 'false');
+        mobileNavPanel.setAttribute('aria-hidden', 'true');
+    };
+
+    const toggleHamburgerMenu = () => {
+        const isOpen = !hamburgerButton.classList.contains('is-open');
+        hamburgerButton.classList.toggle('is-open', isOpen);
+        mobileNavPanel.classList.toggle('is-open', isOpen);
+        hamburgerButton.setAttribute('aria-expanded', String(isOpen));
+        mobileNavPanel.setAttribute('aria-hidden', String(!isOpen));
+    };
+
+    hamburgerButton.onclick = (event) => {
+        event.stopPropagation();
+        toggleHamburgerMenu();
+    };
+
+    mobileNavPanel.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => closeHamburgerMenu());
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!navContainer.contains(event.target)) {
+            closeHamburgerMenu();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeHamburgerMenu();
+    });
+}

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Dashboard Admin - Penagisa Food Corner</title>
+    <script>
+        if (localStorage.getItem('umkm_theme') === 'dark') {
+            document.documentElement.dataset.theme = 'dark';
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+</head>
+<body>
+
+    <div class="gate-admin-trigger" id="gateAdminTrigger" aria-hidden="true" tabindex="-1"></div>
+
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"> Penagisa Food Corner</a>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Kembali ke Situs</a>
+            </nav>
+            <button class="admin-logout-btn" type="button" onclick="adminLogout()">
+                <i class="fa-solid fa-right-from-bracket"></i> Keluar
+            </button>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Aktifkan mode gelap" title="Ganti tema">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- GERBANG AKSES ADMIN -->
+    <div class="admin-gate-overlay" id="adminGateOverlay">
+        <div class="admin-gate-dialog">
+            <button class="admin-gate-close" id="adminGateClose" type="button" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+            <div class="admin-gate-icon"><i class="fa-solid fa-lock"></i></div>
+            <h2>Akses Admin</h2>
+            <p>Masukkan kata sandi untuk melanjutkan.</p>
+            <input type="password" id="adminGatePassword" class="admin-gate-input" placeholder="Kata sandi" inputmode="numeric" autocomplete="off">
+            <p class="admin-gate-error" id="adminGateError"></p>
+            <button class="admin-gate-submit" id="adminGateSubmit" type="button">Masuk</button>
+        </div>
+    </div>
+
+    <div class="page-container admin-dashboard" id="adminDashboard">
+        <div class="status-badge">
+            <span class="status-dot"></span> Mode Admin
+        </div>
+
+        <h1 class="page-title">Dashboard Admin</h1>
+        <p class="page-subtitle">Ringkasan singkat dan pengelolaan review Penagisa Food Corner.</p>
+
+        <div class="grid-3">
+            <div class="stat-box">
+                <i class="fa-solid fa-comments"></i>
+                <div class="stat-number" id="statTotalReviews">0</div>
+                <div class="stat-label">Total Review</div>
+            </div>
+            <div class="stat-box">
+                <i class="fa-solid fa-star"></i>
+                <div class="stat-number" id="statAvgRating">0</div>
+                <div class="stat-label">Rating Rata-rata</div>
+            </div>
+            <div class="stat-box">
+                <i class="fa-solid fa-bowl-food"></i>
+                <div class="stat-number" id="statTotalMenu">0</div>
+                <div class="stat-label">Menu Aktif</div>
+            </div>
+        </div>
+
+        <div class="grid-3 admin-database-stats">
+            <div class="stat-box">
+                <i class="fa-solid fa-chart-line"></i>
+                <div class="stat-number" id="dbTotalClicks">-</div>
+                <div class="stat-label">Klik Link</div>
+            </div>
+            <div class="stat-box">
+                <i class="fa-solid fa-receipt"></i>
+                <div class="stat-number" id="dbTotalOrders">-</div>
+                <div class="stat-label">Total Pesanan</div>
+            </div>
+            <div class="stat-box">
+                <i class="fa-solid fa-money-bill-wave"></i>
+                <div class="stat-number" id="dbTotalSales">-</div>
+                <div class="stat-label">Total Penjualan</div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h3><i class="fa-solid fa-database"></i> Data Database</h3>
+            <p id="databaseStatus" style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Memuat data Supabase...</p>
+            <div class="admin-database-table-wrap">
+                <table class="admin-database-table">
+                    <thead>
+                        <tr><th>Waktu</th><th>Nama</th><th>Pesanan</th><th>Status</th><th>Total</th></tr>
+                    </thead>
+                    <tbody id="databaseOrdersList"><tr><td colspan="5">Belum ada data.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h3><i class="fa-solid fa-comments"></i> Kelola Review</h3>
+            <p style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Hapus review yang tidak sesuai. Perubahan tersimpan otomatis di browser ini.</p>
+            <div id="adminReviewList"></div>
+        </div>
+
+        <div class="info-card">
+            <h3><i class="fa-solid fa-arrows-rotate"></i> Reset Data Uji Coba</h3>
+            <p style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Berguna sebelum bazar dibuka agar keranjang & review kembali ke kondisi awal.</p>
+            <div class="admin-reset-actions">
+                <button class="admin-reset-btn" type="button" onclick="adminResetCart()">
+                    <i class="fa-solid fa-basket-shopping"></i> Kosongkan Keranjang
+                </button>
+                <button class="admin-reset-btn" type="button" onclick="adminResetReviews()">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Review ke Contoh
+                </button>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h3><i class="fa-solid fa-circle-info"></i> Menu, Harga & Kontak</h3>
+            <p>Daftar menu, harga, dan nomor WhatsApp saat ini diatur langsung di <code>script.js</code>, sedangkan alamat dan kontak diatur di <code>alamat.html</code> dan <code>kontak.html</code>, sesuai catatan pada README proyek.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

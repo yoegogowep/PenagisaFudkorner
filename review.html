@@ -12,8 +12,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
 </head>
 <body>
+    <div class="gate-admin-trigger" id="gateAdminTrigger" aria-hidden="true" tabindex="-1"></div>
+
+    <div class="admin-gate-overlay" id="adminGateOverlay">
+        <div class="admin-gate-dialog">
+            <button class="admin-gate-close" id="adminGateClose" type="button" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+            <div class="admin-gate-icon"><i class="fa-solid fa-lock"></i></div>
+            <h2>Akses Admin</h2>
+            <p>Masukkan kata sandi untuk melanjutkan.</p>
+            <input type="password" id="adminGatePassword" class="admin-gate-input" placeholder="Kata sandi" inputmode="numeric" autocomplete="off">
+            <p class="admin-gate-error" id="adminGateError"></p>
+            <button class="admin-gate-submit" id="adminGateSubmit" type="button">Masuk</button>
+        </div>
+    </div>
+
     <header>
         <div class="nav-container">
             <a href="index.html" class="logo"><img class="brand-logo" src="https://files.catbox.moe/qk265j.png" alt="Logo Penagisa Food Corner"> Penagisa Food Corner</a>
@@ -42,8 +58,8 @@
 
         <div class="review-summary">
             <div class="review-summary-score">
-                <strong>4.9</strong>
-                <div class="review-summary-stars" aria-label="Rating rata-rata 4.9 dari 5 bintang">★★★★★</div>
+                <strong id="reviewAverageRating">1.0</strong>
+                <div class="review-summary-stars" id="reviewAverageStars" aria-label="Rating rata-rata 1 dari 5 bintang">★☆☆☆☆</div>
                 <span>Dari pelanggan Penagisa Food Corner</span>
             </div>
             <div class="review-summary-note">

@@ -95,5 +95,27 @@ QR Code berada di `kontak.html` dan dibuat otomatis oleh `script.js` menggunakan
 ## Catatan
 
 - Keranjang belanja disimpan di `localStorage` browser.
-- Pesanan dikirim melalui WhatsApp dan tidak menggunakan database.
-- Form kontak saat ini hanya menampilkan notifikasi bahwa pesan telah terkirim; belum terhubung ke email atau server.
+- Pesanan tetap dikirim melalui WhatsApp dan juga disimpan ke database jika Supabase sudah dikonfigurasi.
+- Form kontak saat ini hanya mengirim pesan ke WhatsApp; belum disimpan ke database.
+
+## Database
+
+File `database.sql` menyiapkan database PostgreSQL/Supabase untuk:
+
+- `comments`: komentar/review pelanggan dan status moderasinya.
+- `link_clicks`: waktu, sumber, referrer, perangkat, dan URL yang diklik audiens.
+- `sales_orders`: data pelanggan, jenis pesanan, status, total penjualan, dan waktu pemesanan.
+- `sales_order_items`: rincian menu, jumlah, harga satuan, dan subtotal setiap pesanan.
+- `admin_dashboard`: view ringkasan komentar, klik link, pesanan, omzet, dan pesanan baru.
+
+### Cara Menyiapkan
+
+1. Buat project di Supabase.
+2. Buka menu SQL Editor.
+3. Salin seluruh isi `database.sql`, lalu jalankan.
+4. Buka `supabase-config.js`, lalu isi `url` dengan Project URL dan `anonKey` dengan anon public key.
+5. Jalankan website melalui Live Server atau hosting. Jangan menaruh service role key di file frontend.
+
+Skema sudah menggunakan Row Level Security. Komentar publik dikirim sebagai `pending`, klik link hanya dapat ditambahkan, dan pesanan publik dibuat sebagai `new`. Pembacaan serta perubahan data dashboard harus melalui akun admin atau backend yang terautentikasi.
+
+Jika `supabase-config.js` masih kosong, website otomatis memakai `localStorage` seperti sebelumnya. Setelah konfigurasi diisi, komentar approved dari database akan tampil di halaman review, dan data klik serta pesanan mulai tercatat lintas perangkat.
