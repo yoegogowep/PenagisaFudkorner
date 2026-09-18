@@ -38,6 +38,7 @@ const ADMIN_TAP_WINDOW_MS = 1200;
 let adminTapCount = 0;
 let adminTapLastTime = 0;
 let adminDatabaseComments = [];
+let adminConfirmAction = null;
 
 const supabaseClient = window.supabase && window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.anonKey
     ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey)
@@ -1162,6 +1163,13 @@ function renderAdminReviews() {
                 declineButton.addEventListener('click', () => declineAdminComment(comment.id, declineButton));
                 actions.appendChild(declineButton);
             }
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'admin-review-delete';
+            deleteButton.type = 'button';
+            deleteButton.setAttribute('aria-label', 'Hapus komentar');
+            deleteButton.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+            deleteButton.addEventListener('click', () => deleteAdminComment(comment.id));
+            actions.appendChild(deleteButton);
             list.appendChild(row);
         });
         return;
@@ -1209,6 +1217,33 @@ function deleteAdminReview(index) {
     renderAdminReviews();
     renderAdminStats();
     showAdminToast('Berhasil', 'Review telah dihapus.');
+}
+
+function openAdminConfirm(title, message, action) {
+    const modal = document.getElementById('adminConfirmModal');
+    const titleElement = document.getElementById('adminConfirmTitle');
+    const messageElement = document.getElementById('adminConfirmMessage');
+    const submitButton = document.getElementById('adminConfirmSubmit');
+    if (!modal || !titleElement || !messageElement || !submitButton) return;
+
+    titleElement.textContent = title;
+    messageElement.textContent = message;
+    adminConfirmAction = action;
+    submitButton.onclick = async () => {
+        const currentAction = adminConfirmAction;
+        closeAdminConfirm();
+        if (currentAction) await currentAction();
+    };
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeAdminConfirm() {
+    const modal = document.getElementById('adminConfirmModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    adminConfirmAction = null;
 }
 
 function renderAdminStats() {
@@ -1638,7 +1673,10 @@ function setupHamburgerNavigation() {
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') closeHamburgerMenu();
+        if (event.key === 'Escape') {
+            closeHamburgerMenu();
+            closeAdminConfirm();
+        }
     });
 }
 
@@ -1688,24 +1726,40 @@ async function approveAdminComment(commentId, button) {
 
 async function declineAdminComment(commentId, button) {
     if (!supabaseClient || !commentId) return;
-    if (!window.confirm('Tolak komentar ini?')) return;
-    button.disabled = true;
-    button.textContent = 'Menolak...';
+    openAdminConfirm('Tolak Komentar?', 'Komentar ini akan ditandai sebagai rejected dan tidak akan tampil di halaman review.', async () => {
+        button.disabled = true;
+        button.textContent = 'Menolak...';
 
-    const { error } = await supabaseClient
-        .from('comments')
-        .update({ status: 'rejected' })
-        .eq('id', commentId)
-        .eq('status', 'pending');
+        const { error } = await supabaseClient
+            .from('comments')
+            .update({ status: 'rejected' })
+            .eq('id', commentId)
+            .eq('status', 'pending');
 
-    if (error) {
-        console.error('Decline komentar gagal:', error);
-        button.disabled = false;
-        button.innerHTML = '<i class="fa-solid fa-xmark"></i> Decline';
-        showAdminToast('Gagal', 'Komentar belum berhasil ditolak.');
-        return;
-    }
+        if (error) {
+            console.error('Decline komentar gagal:', error);
+            button.disabled = false;
+            button.innerHTML = '<i class="fa-solid fa-xmark"></i> Decline';
+            showAdminToast('Gagal', 'Komentar belum berhasil ditolak.');
+            return;
+        }
 
-    await loadAdminComments();
-    showAdminToast('Berhasil', 'Komentar telah ditolak.');
+        await loadAdminComments();
+        showAdminToast('Berhasil', 'Komentar telah ditolak.');
+    });
+}
+
+function deleteAdminComment(commentId) {
+    if (!supabaseClient || !commentId) return;
+    openAdminConfirm('Hapus Komentar?', 'Komentar ini akan dihapus permanen dari Supabase.', async () => {
+        const { error } = await supabaseClient.from('comments').delete().eq('id', commentId);
+        if (error) {
+            console.error('Hapus komentar gagal:', error);
+            showAdminToast('Gagal', 'Komentar belum berhasil dihapus. Jalankan policy terbaru.');
+            return;
+        }
+        await loadAdminComments();
+        await loadCommentsFromDatabase();
+        showAdminToast('Berhasil', 'Komentar telah dihapus.');
+    });
 }

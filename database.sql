@@ -87,6 +87,10 @@ create policy "admin dashboard can approve comments"
     on public.comments for update
     using (true)
     with check (status in ('pending', 'approved', 'rejected'));
+drop policy if exists "admin dashboard can delete comments" on public.comments;
+create policy "admin dashboard can delete comments"
+    on public.comments for delete
+    using (true);
 
 -- Statistik klik hanya menerima data dari frontend dan tidak dibuka untuk pembacaan publik.
 alter table public.link_clicks enable row level security;

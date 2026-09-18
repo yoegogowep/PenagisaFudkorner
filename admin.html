@@ -131,6 +131,19 @@
         </div>
     </div>
 
+    <div class="admin-confirm-modal" id="adminConfirmModal" aria-hidden="true">
+        <div class="admin-confirm-backdrop" onclick="closeAdminConfirm()"></div>
+        <div class="admin-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="adminConfirmTitle">
+            <div class="admin-confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h2 id="adminConfirmTitle">Konfirmasi Aksi</h2>
+            <p id="adminConfirmMessage"></p>
+            <div class="admin-confirm-actions">
+                <button type="button" class="admin-confirm-cancel" onclick="closeAdminConfirm()">Batal</button>
+                <button type="button" class="admin-confirm-submit" id="adminConfirmSubmit">Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
