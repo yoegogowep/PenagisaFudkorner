@@ -102,16 +102,38 @@
                     <label id="addressLabel">ALAMAT LENGKAP</label>
                     <textarea id="custAddress" rows="2" placeholder="Isi alamat rumah Anda"></textarea>
                 </div>
+                <div class="form-group" id="paymentMethodGroup">
+                    <label>METODE PEMBAYARAN</label>
+                    <select id="paymentMethod" onchange="handlePaymentMethodChange()">
+                        <option value="">Pilih metode pembayaran</option>
+                        <option value="QRIS">QRIS</option>
+                        <option value="COD">COD / Bayar di tempat</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label>CATATAN PESANAN <span style="font-weight:400; color:var(--text-muted);">(opsional)</span></label>
                     <textarea id="orderNote" rows="2" placeholder="Contoh: sambal dipisah, tidak pedas"></textarea>
                 </div>
             </div>
 
-            <button class="wa-submit-btn" onclick="sendOrderToWhatsApp()">
-                <i class="fa-brands fa-whatsapp"></i> Pesan via WhatsApp
+            <button class="wa-submit-btn" id="orderActionButton" onclick="startOrderConfirmation()">
+                Konfirmasi Pesanan
             </button>
             </div>
+        </div>
+    </div>
+
+    <div class="payment-modal" id="qrisPaymentModal" aria-hidden="true">
+        <div class="payment-modal-backdrop" onclick="closeQrisPaymentModal()"></div>
+        <div class="payment-modal-content" role="dialog" aria-modal="true" aria-labelledby="qrisPaymentTitle">
+            <button class="payment-modal-close" type="button" onclick="closeQrisPaymentModal()" aria-label="Tutup QRIS"><i class="fa-solid fa-xmark"></i></button>
+            <span class="payment-modal-kicker">Pembayaran QRIS</span>
+            <h3 id="qrisPaymentTitle">Scan QR untuk membayar</h3>
+            <p>Setelah pembayaran berhasil, tekan tombol di bawah untuk melanjutkan ke WhatsApp.</p>
+            <img class="qris-payment-image" src="qris.png" alt="QRIS Penagisa Food Corner">
+            <button class="wa-submit-btn" type="button" onclick="confirmQrisPayment()">
+                <i class="fa-solid fa-circle-check"></i> Pembayaran telah berhasil
+            </button>
         </div>
     </div>
 

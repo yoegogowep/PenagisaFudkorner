@@ -37,6 +37,7 @@ const ADMIN_TAP_TARGET = 5;
 const ADMIN_TAP_WINDOW_MS = 1200;
 let adminTapCount = 0;
 let adminTapLastTime = 0;
+let adminDatabaseComments = [];
 
 const supabaseClient = window.supabase && window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.anonKey
     ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey)
@@ -90,16 +91,17 @@ async function loadCommentsFromDatabase() {
 }
 
 async function saveOrderToDatabase(order, items) {
-    if (!supabaseClient) return;
+    if (!supabaseClient) return true;
     const { data, error } = await supabaseClient.from('sales_orders').insert(order).select('id').single();
     if (error || !data) {
         console.error('Pesanan gagal disimpan ke database:', error);
-        return;
+        return false;
     }
     const { error: itemError } = await supabaseClient.from('sales_order_items').insert(
         items.map(item => ({ ...item, order_id: data.id }))
     );
     if (itemError) console.error('Detail pesanan gagal disimpan:', itemError);
+    return !itemError;
 }
 
 function applyTheme(theme) {
@@ -254,6 +256,8 @@ const menuItems = [
 // Ambil Keranjang dari localStorage agar tidak hilang saat pindah halaman
 let cart = JSON.parse(localStorage.getItem('umkm_cart')) || {};
 let cartDimTimer;
+let pendingOrder = null;
+let qrisPaymentConfirmed = false;
 
 function refreshCartActivity() {
     clearTimeout(cartDimTimer);
@@ -752,9 +756,9 @@ function showInlineAlert(message, duration = 3000) {
 
     const el = document.createElement('div');
     el.className = 'inline-alert';
-        el.innerHTML = `<strong>Nama belum diisi</strong><span>${message}</span>`;
+        el.innerHTML = `<strong>Pemberitahuan Pesanan</strong><span>${message}</span>`;
         el.setAttribute('role', 'alertdialog');
-        el.setAttribute('aria-label', 'Peringatan nama belum diisi');
+        el.setAttribute('aria-label', 'Pemberitahuan pesanan');
         el.addEventListener('click', () => {
             el.classList.add('hide');
             setTimeout(() => el.remove(), 220);
@@ -767,14 +771,25 @@ function showInlineAlert(message, duration = 3000) {
     }, duration);
 }
 
-// KIRIM KE WHATSAPP
-async function sendOrderToWhatsApp() {
+function setOrderActionButton(label, showWhatsappIcon) {
+    const button = document.getElementById('orderActionButton');
+    if (!button) return;
+    button.innerHTML = `${showWhatsappIcon ? '<i class="fa-brands fa-whatsapp"></i> ' : ''}${label}`;
+}
+
+function startOrderConfirmation() {
+    if (pendingOrder) {
+        sendOrderToWhatsApp();
+        return;
+    }
+
     const name = document.getElementById("custName").value.trim();
     const type = document.getElementById("orderType").value;
     const addressInput = document.getElementById("custAddress");
     const address = addressInput ? addressInput.value.trim() : "";
     const noteInput = document.getElementById("orderNote");
     const note = noteInput ? noteInput.value.trim() : "";
+    const paymentMethod = document.getElementById('paymentMethod')?.value;
 
     if (!name) {
         showInlineAlert("Harap masukkan nama Anda.");
@@ -786,6 +801,72 @@ async function sendOrderToWhatsApp() {
         if (addressInput) addressInput.focus();
         return;
     }
+
+    if (!paymentMethod) {
+        showInlineAlert('Silakan pilih metode pembayaran terlebih dahulu.');
+        return;
+    }
+
+    pendingOrder = { name, type, address, note };
+    setOrderActionButton('Konfirmasi ke WhatsApp', true);
+    handlePaymentMethodChange();
+}
+
+function handlePaymentMethodChange() {
+    const paymentMethod = document.getElementById('paymentMethod')?.value;
+    if (!paymentMethod) return;
+
+    if (paymentMethod === 'QRIS') {
+        qrisPaymentConfirmed = false;
+        const modal = document.getElementById('qrisPaymentModal');
+        if (modal) {
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+        return;
+    }
+
+    setOrderActionButton('Konfirmasi ke WhatsApp', true);
+}
+
+function closeQrisPaymentModal() {
+    const modal = document.getElementById('qrisPaymentModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+function confirmQrisPayment() {
+    qrisPaymentConfirmed = true;
+    closeQrisPaymentModal();
+    showInlineAlert('Pembayaran telah berhasil. Silakan konfirmasi ke WhatsApp.', 4000);
+    setOrderActionButton('Konfirmasi ke WhatsApp', true);
+}
+
+// KIRIM KE WHATSAPP setelah metode pembayaran dipilih
+async function sendOrderToWhatsApp() {
+    if (!pendingOrder) {
+        startOrderConfirmation();
+        return;
+    }
+
+    const paymentMethod = document.getElementById('paymentMethod')?.value;
+    if (!paymentMethod) {
+        showInlineAlert('Silakan pilih metode pembayaran terlebih dahulu.');
+        return;
+    }
+
+    if (paymentMethod === 'QRIS' && !qrisPaymentConfirmed) {
+        const modal = document.getElementById('qrisPaymentModal');
+        if (modal) {
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+        showInlineAlert('Selesaikan pembayaran QRIS terlebih dahulu.');
+        return;
+    }
+
+    const { name, type, address, note } = pendingOrder;
 
     const orderItems = Object.keys(cart).map(id => {
         const item = menuItems.find(menuItem => menuItem.id == id);
@@ -818,17 +899,27 @@ async function sendOrderToWhatsApp() {
         text += `*Alamat:* ${address}\n`;
     }
     if (note) text += `*Catatan:* ${note}\n`;
-    text += `\n`;
-    text += `Mohon konfirmasi pesanan ini. Terima kasih!`;
+    text += `*Metode Pembayaran:* ${paymentMethod === 'QRIS' ? 'QRIS - SUDAH BAYAR' : 'COD - BAYAR DI TEMPAT'}\n`;
+    text += paymentMethod === 'QRIS'
+        ? `*Bukti pembayaran:* Akan dikirim melalui WhatsApp.\n\nMohon cek bukti transfer. Terima kasih!`
+        : `\nMohon konfirmasi pesanan COD ini. Terima kasih!`;
 
-    await saveOrderToDatabase({
+    const saved = await saveOrderToDatabase({
         customer_name: name,
         order_type: type,
+        payment_method: paymentMethod,
+        payment_status: paymentMethod === 'QRIS' ? 'paid' : 'cod_confirmed',
+        payment_confirmed_at: new Date().toISOString(),
         address: type === 'Delivery' ? address : null,
         note: note || null,
         total_amount: total,
         whatsapp_sent_at: new Date().toISOString()
     }, orderItems);
+
+    if (!saved) {
+        showInlineAlert('Pesanan gagal disimpan ke database. Jalankan database.sql terbaru lalu coba lagi.');
+        return;
+    }
 
     window.open(`https://wa.me/${NOMOR_WA_UMKM}?text=${encodeURIComponent(text)}`, '_blank');
 }
@@ -979,6 +1070,7 @@ function unlockAdminDashboard() {
 
     renderAdminReviews();
     renderAdminStats();
+    loadAdminComments();
     loadAdminDatabaseData();
 }
 
@@ -992,6 +1084,7 @@ function initAdminPage() {
         dashboard.classList.add('is-visible');
         renderAdminReviews();
         renderAdminStats();
+        loadAdminComments();
         loadAdminDatabaseData();
     } else {
         openAdminGate();
@@ -1029,6 +1122,43 @@ function showAdminToast(title, message, duration = 2600) {
 function renderAdminReviews() {
     const list = document.getElementById('adminReviewList');
     if (!list) return;
+
+    if (adminDatabaseComments.length > 0) {
+        list.innerHTML = '';
+        adminDatabaseComments.forEach((comment) => {
+            const row = document.createElement('div');
+            row.className = 'admin-review-row';
+            row.innerHTML = `
+                <div class="admin-review-info">
+                    <div class="admin-review-top">
+                        <strong></strong>
+                        <span class="admin-review-stars"></span>
+                    </div>
+                    <div class="admin-review-food"></div>
+                    <p class="admin-review-message"></p>
+                    <small class="admin-review-status"></small>
+                </div>
+                <div class="admin-review-actions"></div>
+            `;
+            row.querySelector('strong').textContent = comment.name;
+            row.querySelector('.admin-review-stars').textContent = '★'.repeat(comment.rating) + '☆'.repeat(5 - comment.rating);
+            row.querySelector('.admin-review-food').textContent = comment.food;
+            row.querySelector('.admin-review-message').textContent = comment.message;
+            row.querySelector('.admin-review-status').textContent = `Status: ${comment.status}`;
+
+            const actions = row.querySelector('.admin-review-actions');
+            if (comment.status === 'pending') {
+                const approveButton = document.createElement('button');
+                approveButton.className = 'admin-review-approve';
+                approveButton.type = 'button';
+                approveButton.innerHTML = '<i class="fa-solid fa-check"></i> Approve';
+                approveButton.addEventListener('click', () => approveAdminComment(comment.id, approveButton));
+                actions.appendChild(approveButton);
+            }
+            list.appendChild(row);
+        });
+        return;
+    }
 
     const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
     const reviews = storedReviews.length > 0 ? storedReviews : DEFAULT_REVIEWS;
@@ -1503,4 +1633,47 @@ function setupHamburgerNavigation() {
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') closeHamburgerMenu();
     });
+}
+
+async function loadAdminComments() {
+    const list = document.getElementById('adminReviewList');
+    if (!list || !supabaseClient) return;
+
+    const { data, error } = await supabaseClient
+        .from('comments')
+        .select('id, name, food, rating, message, status, created_at')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Komentar database gagal dimuat:', error);
+        showAdminToast('Gagal', 'Komentar Supabase belum bisa dimuat. Periksa policy database.');
+        return;
+    }
+
+    adminDatabaseComments = data || [];
+    renderAdminReviews();
+}
+
+async function approveAdminComment(commentId, button) {
+    if (!supabaseClient || !commentId) return;
+    button.disabled = true;
+    button.textContent = 'Menyetujui...';
+
+    const { error } = await supabaseClient
+        .from('comments')
+        .update({ status: 'approved' })
+        .eq('id', commentId)
+        .eq('status', 'pending');
+
+    if (error) {
+        console.error('Approve komentar gagal:', error);
+        button.disabled = false;
+        button.innerHTML = '<i class="fa-solid fa-check"></i> Approve';
+        showAdminToast('Gagal', 'Komentar belum berhasil di-approve.');
+        return;
+    }
+
+    await loadAdminComments();
+    await loadCommentsFromDatabase();
+    showAdminToast('Berhasil', 'Komentar telah di-approve dan tampil di halaman review.');
 }
