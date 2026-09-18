@@ -1154,6 +1154,13 @@ function renderAdminReviews() {
                 approveButton.innerHTML = '<i class="fa-solid fa-check"></i> Approve';
                 approveButton.addEventListener('click', () => approveAdminComment(comment.id, approveButton));
                 actions.appendChild(approveButton);
+
+                const declineButton = document.createElement('button');
+                declineButton.className = 'admin-review-decline';
+                declineButton.type = 'button';
+                declineButton.innerHTML = '<i class="fa-solid fa-xmark"></i> Decline';
+                declineButton.addEventListener('click', () => declineAdminComment(comment.id, declineButton));
+                actions.appendChild(declineButton);
             }
             list.appendChild(row);
         });
@@ -1646,6 +1653,7 @@ async function loadAdminComments() {
 
     if (error) {
         console.error('Komentar database gagal dimuat:', error);
+        list.innerHTML = '<p class="review-empty">Komentar Supabase belum bisa dimuat. Jalankan policy terbaru dari database.sql.</p>';
         showAdminToast('Gagal', 'Komentar Supabase belum bisa dimuat. Periksa policy database.');
         return;
     }
@@ -1676,4 +1684,28 @@ async function approveAdminComment(commentId, button) {
     await loadAdminComments();
     await loadCommentsFromDatabase();
     showAdminToast('Berhasil', 'Komentar telah di-approve dan tampil di halaman review.');
+}
+
+async function declineAdminComment(commentId, button) {
+    if (!supabaseClient || !commentId) return;
+    if (!window.confirm('Tolak komentar ini?')) return;
+    button.disabled = true;
+    button.textContent = 'Menolak...';
+
+    const { error } = await supabaseClient
+        .from('comments')
+        .update({ status: 'rejected' })
+        .eq('id', commentId)
+        .eq('status', 'pending');
+
+    if (error) {
+        console.error('Decline komentar gagal:', error);
+        button.disabled = false;
+        button.innerHTML = '<i class="fa-solid fa-xmark"></i> Decline';
+        showAdminToast('Gagal', 'Komentar belum berhasil ditolak.');
+        return;
+    }
+
+    await loadAdminComments();
+    showAdminToast('Berhasil', 'Komentar telah ditolak.');
 }

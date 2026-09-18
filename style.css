@@ -3908,6 +3908,25 @@ header {
     opacity: 0.6;
 }
 
+.admin-review-decline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid #d45b67;
+    border-radius: 10px;
+    background: rgba(212, 91, 103, 0.1);
+    color: #b33c4a;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.admin-review-decline:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
 .admin-reset-actions {
     display: flex;
     flex-wrap: wrap;
