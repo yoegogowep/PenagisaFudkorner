@@ -68,17 +68,21 @@ select
 
 -- Komentar publik boleh dikirim, tetapi hanya komentar approved yang boleh dibaca publik.
 alter table public.comments enable row level security;
+drop policy if exists "public can submit comments" on public.comments;
 create policy "public can submit comments"
     on public.comments for insert
     with check (status = 'pending');
+drop policy if exists "public can read approved comments" on public.comments;
 create policy "public can read approved comments"
     on public.comments for select
     using (status = 'approved');
 
 -- Dashboard admin memakai gerbang admin di frontend untuk memoderasi komentar.
+drop policy if exists "admin dashboard can read comments" on public.comments;
 create policy "admin dashboard can read comments"
     on public.comments for select
     using (true);
+drop policy if exists "admin dashboard can approve comments" on public.comments;
 create policy "admin dashboard can approve comments"
     on public.comments for update
     using (true)
@@ -86,6 +90,7 @@ create policy "admin dashboard can approve comments"
 
 -- Statistik klik hanya menerima data dari frontend dan tidak dibuka untuk pembacaan publik.
 alter table public.link_clicks enable row level security;
+drop policy if exists "public can record link clicks" on public.link_clicks;
 create policy "public can record link clicks"
     on public.link_clicks for insert
     with check (true);
@@ -93,11 +98,13 @@ create policy "public can record link clicks"
 -- Pesanan dapat dibuat dari frontend. Data pengelolaan dashboard sebaiknya dibaca
 -- memakai akun admin/backend yang sudah diautentikasi.
 alter table public.sales_orders enable row level security;
+drop policy if exists "public can submit sales orders" on public.sales_orders;
 create policy "public can submit sales orders"
     on public.sales_orders for insert
     with check (status = 'new');
 
 alter table public.sales_order_items enable row level security;
+drop policy if exists "public can submit order items" on public.sales_order_items;
 create policy "public can submit order items"
     on public.sales_order_items for insert
     with check (true);
