@@ -14,6 +14,7 @@ const ORDER_STATUS_LABELS = {
     confirmed: 'Dikonfirmasi',
     completed: 'Selesai'
 };
+const ORDER_STATUS_STEPS = ['new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered'];
 const DEFAULT_REVIEWS = [
     {
         name: "Ipul",
@@ -52,6 +53,9 @@ let adminTapCount = 0;
 let adminTapLastTime = 0;
 let adminDatabaseComments = [];
 let adminConfirmAction = null;
+let adminOrderSearchQuery = '';
+let adminOrderStatusFilter = 'all';
+let adminOrderExpanded = false;
 
 const supabaseClient = window.supabase && window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.anonKey
     ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey)
@@ -194,13 +198,34 @@ function closePaymentProofModal() {
     modal.setAttribute('aria-hidden', 'true');
 }
 
+function openOrderStatus() {
+    const modal = document.getElementById('orderStatusModal');
+    if (!modal) return;
+    closeCartModal();
+    renderMyOrdersInCart();
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('review-popup-open');
+}
+
+function closeOrderStatus() {
+    const modal = document.getElementById('orderStatusModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('review-popup-open');
+}
+
 function applyTheme(theme) {
     const isDark = theme === 'dark';
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
 
     const button = document.querySelector('.theme-toggle');
     if (button) {
-        button.innerHTML = `<i class="fa-solid ${isDark ? 'fa-sun' : 'fa-moon'}"></i>`;
+        const icon = `<i class="fa-solid ${isDark ? 'fa-sun' : 'fa-moon'}"></i>`;
+        button.innerHTML = button.classList.contains('nav-hamburger-theme') || button.closest('.nav-tools-item')
+            ? `${icon}<span>Ganti tema</span>`
+            : icon;
         button.setAttribute('aria-label', isDark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap');
     }
 }
@@ -364,6 +389,7 @@ let cartDimTimer;
 let pendingOrder = null;
 let qrisPaymentConfirmed = false;
 let qrisPaymentProofFile = null;
+let orderSubmissionInProgress = false;
 
 function refreshCartActivity() {
     clearTimeout(cartDimTimer);
@@ -378,6 +404,7 @@ function handleCartSummaryClick(event) {
         window.location.href = 'menu.html';
         return;
     }
+    closeOrderStatus();
     toggleCartModal();
 }
 
@@ -798,13 +825,17 @@ function renderMyOrdersInCart() {
     historyList.innerHTML = orders.map((order) => {
         const canCancel = ['new', 'queued'].includes(order.status);
         const statusClass = order.status === 'cancelled' ? 'status-cancelled' : order.status === 'delivered' ? 'status-delivered' : 'status-active';
+        const progressStatus = order.status === 'confirmed' ? 'new' : order.status === 'completed' ? 'delivered' : order.status;
+        const currentStep = ORDER_STATUS_STEPS.indexOf(progressStatus);
+        const progress = order.status === 'cancelled' ? 0 : Math.max(0, currentStep);
         return `
             <div class="user-order-item">
                 <div class="user-order-top-row">
-                    <strong>#${String(order.id).slice(0, 8)}</strong>
-                    <span class="status-pill ${statusClass}">${formatOrderStatus(order.status)}</span>
+                    <div><strong class="order-code">Kode #${String(order.id).slice(0, 8).toUpperCase()}</strong><span class="user-order-meta">${new Date(order.created_at).toLocaleString('id-ID')}</span></div>
+                    <span class="status-pill ${statusClass}"><i class="fa-solid fa-circle-notch"></i> ${formatOrderStatus(order.status)}</span>
                 </div>
-                <div class="user-order-meta">${new Date(order.created_at).toLocaleString('id-ID')} • ${order.order_type}</div>
+                <div class="user-order-type"><i class="fa-solid ${order.order_type === 'Takeaway' ? 'fa-shop' : 'fa-truck'}"></i> ${order.order_type === 'Takeaway' ? 'Ambil sendiri' : 'Diantar ke alamat'}</div>
+                ${order.status !== 'cancelled' ? `<div class="order-progress" style="--progress-step:${progress}">${ORDER_STATUS_STEPS.map((step, index) => `<span class="order-progress-step ${index <= currentStep ? 'is-done' : ''}">${formatOrderStatus(step)}</span>`).join('')}</div>` : ''}
                 <div class="user-order-meta">Total: Rp ${Number(order.total_amount || 0).toLocaleString('id-ID')}</div>
                 <div class="user-order-items">${(order.items || []).map((item) => `${item.product_name} x${item.quantity}`).join(', ') || '-'}</div>
                 <div class="user-order-actions">
@@ -1006,6 +1037,7 @@ function setOrderActionButton(label, showWhatsappIcon) {
 }
 
 function startOrderConfirmation() {
+    if (orderSubmissionInProgress) return;
     if (pendingOrder) {
         completeOrder();
         return;
@@ -1036,8 +1068,9 @@ function startOrderConfirmation() {
     }
 
     pendingOrder = { name, type, address, note };
-    setOrderActionButton('Lanjutkan Pembayaran', false);
+    setOrderActionButton(paymentMethod === 'QRIS' ? 'Lanjutkan Pembayaran' : 'Kirim Pesanan', false);
     if (paymentMethod === 'QRIS') openQrisPaymentModal();
+    else completeOrder();
 }
 
 function handlePaymentMethodChange() {
@@ -1051,7 +1084,7 @@ function handlePaymentMethodChange() {
         return;
     }
 
-    setOrderActionButton('Lanjutkan Pembayaran', false);
+    setOrderActionButton(paymentMethod === 'QRIS' ? 'Lanjutkan Pembayaran' : 'Kirim Pesanan', false);
 }
 
 function closeQrisPaymentModal() {
@@ -1113,20 +1146,31 @@ function confirmQrisPayment() {
 }
 
 async function completeOrder() {
+    if (orderSubmissionInProgress) return;
+    orderSubmissionInProgress = true;
+    const actionButton = document.getElementById('orderActionButton');
+    if (actionButton) actionButton.disabled = true;
+
     if (!pendingOrder) {
         startOrderConfirmation();
+        orderSubmissionInProgress = false;
+        if (actionButton) actionButton.disabled = false;
         return;
     }
 
     const paymentMethod = document.getElementById('paymentMethod')?.value;
     if (!paymentMethod) {
         showInlineAlert('Silakan pilih metode pembayaran terlebih dahulu.');
+        orderSubmissionInProgress = false;
+        if (actionButton) actionButton.disabled = false;
         return;
     }
 
     if (paymentMethod === 'QRIS' && !qrisPaymentConfirmed) {
         openQrisPaymentModal();
         showInlineAlert('Selesaikan pembayaran QRIS dan unggah bukti transfer terlebih dahulu.');
+        orderSubmissionInProgress = false;
+        if (actionButton) actionButton.disabled = false;
         return;
     }
 
@@ -1152,6 +1196,8 @@ async function completeOrder() {
 
     if (paymentMethod === 'QRIS' && !supabaseClient) {
         showInlineAlert('Database belum terhubung, sehingga bukti transfer belum dapat dikirim.');
+        orderSubmissionInProgress = false;
+        if (actionButton) actionButton.disabled = false;
         return;
     }
 
@@ -1167,6 +1213,8 @@ async function completeOrder() {
         if (uploadError) {
             console.error('Bukti transfer gagal diunggah:', uploadError);
             showInlineAlert('Bukti transfer gagal diunggah. Pastikan bucket payment-proofs sudah dibuat.');
+            orderSubmissionInProgress = false;
+            if (actionButton) actionButton.disabled = false;
             return;
         }
         paymentProofUrl = supabaseClient.storage.from('payment-proofs').getPublicUrl(proofPath).data.publicUrl;
@@ -1187,6 +1235,8 @@ async function completeOrder() {
 
     if (!saved) {
         showInlineAlert('Pesanan gagal disimpan ke database. Jalankan database.sql terbaru lalu coba lagi.');
+        orderSubmissionInProgress = false;
+        if (actionButton) actionButton.disabled = false;
         return;
     }
 
@@ -1216,6 +1266,7 @@ async function completeOrder() {
     pendingOrder = null;
     qrisPaymentConfirmed = false;
     qrisPaymentProofFile = null;
+    orderSubmissionInProgress = false;
     saveAndRefreshCart();
     showOrderReviewModal(orderedProducts);
 }
@@ -1587,7 +1638,7 @@ async function loadAdminDatabaseData() {
 
     const [dashboardResult, ordersResult, menuSalesResult] = await Promise.all([
         supabaseClient.from('admin_dashboard').select('*').single(),
-        supabaseClient.from('sales_orders').select('id, created_at, customer_name, order_type, address, status, payment_method, payment_status, payment_proof_url, total_amount').order('created_at', { ascending: false }).limit(10),
+        supabaseClient.from('sales_orders').select('id, created_at, customer_name, order_type, address, status, payment_method, payment_status, payment_proof_url, total_amount').order('created_at', { ascending: false }).limit(1000),
         supabaseClient.from('menu_sales_summary').select('product_name, total_quantity, total_sales').order('total_sales', { ascending: false })
     ]);
 
@@ -1601,7 +1652,20 @@ async function loadAdminDatabaseData() {
     document.getElementById('dbTotalClicks').textContent = summary.total_link_clicks ?? 0;
     document.getElementById('dbTotalOrders').textContent = summary.total_orders ?? 0;
     document.getElementById('dbTotalSales').textContent = `Rp ${Number(summary.total_sales || 0).toLocaleString('id-ID')}`;
-    status.textContent = `Terakhir diperbarui ${new Date().toLocaleString('id-ID')}. Menampilkan 10 pesanan terbaru.`;
+    const normalizedSearch = adminOrderSearchQuery.trim().toLowerCase();
+    const searchedOrders = ordersResult.data.filter((order) => {
+        if (!normalizedSearch) return true;
+        return String(order.id).toLowerCase().includes(normalizedSearch) || String(order.customer_name || '').toLowerCase().includes(normalizedSearch);
+    });
+    const filteredOrders = searchedOrders.filter((order) => {
+        if (adminOrderStatusFilter === 'completed') return ['delivered', 'completed'].includes(order.status);
+        if (adminOrderStatusFilter === 'cancelled') return order.status === 'cancelled';
+        if (adminOrderStatusFilter === 'processing') return !['delivered', 'completed', 'cancelled'].includes(order.status);
+        return true;
+    });
+    const compactOrderLimit = 5;
+    const visibleOrders = adminOrderExpanded ? filteredOrders : filteredOrders.slice(0, compactOrderLimit);
+    status.textContent = `Terakhir diperbarui ${new Date().toLocaleString('id-ID')}. Menampilkan ${visibleOrders.length} dari ${filteredOrders.length} pesanan${normalizedSearch || adminOrderStatusFilter !== 'all' ? ' yang cocok' : ''}.`;
 
     const menuSalesList = document.getElementById('menuSalesList');
     if (menuSalesList) {
@@ -1614,19 +1678,40 @@ async function loadAdminDatabaseData() {
     }
 
     ordersList.innerHTML = '';
-    if (!ordersResult.data.length) {
-        ordersList.innerHTML = '<tr><td colspan="8">Belum ada pesanan di database.</td></tr>';
+    if (!filteredOrders.length) {
+        ordersList.innerHTML = '<tr><td colspan="9">Belum ada pesanan di database.</td></tr>';
+        updateAdminOrderExpandButton(0);
         return;
     }
 
-    ordersResult.data.forEach(order => {
+    visibleOrders.forEach(order => {
         const row = document.createElement('tr');
-        [
+        const basicCells = [
+            String(order.id).slice(0, 8).toUpperCase(),
             new Date(order.created_at).toLocaleString('id-ID'),
             order.customer_name,
             order.order_type,
-            order.address || '-',
-            order.status,
+            order.address || '-'
+        ];
+        basicCells.forEach(value => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+        const statusCell = document.createElement('td');
+        const statusSelect = document.createElement('select');
+        statusSelect.className = 'admin-order-status-select';
+        ORDER_STATUS_STEPS.concat(['confirmed', 'completed', 'cancelled']).forEach((statusValue) => {
+            const option = document.createElement('option');
+            option.value = statusValue;
+            option.textContent = formatOrderStatus(statusValue);
+            option.selected = order.status === statusValue;
+            statusSelect.appendChild(option);
+        });
+        statusSelect.addEventListener('change', () => updateAdminOrderStatus(order.id, statusSelect.value));
+        statusCell.appendChild(statusSelect);
+        row.appendChild(statusCell);
+        [
             order.payment_status === 'paid' ? 'Sudah masuk' : order.payment_method === 'QRIS' ? 'Menunggu verifikasi' : 'COD',
             `Rp ${Number(order.total_amount || 0).toLocaleString('id-ID')}`
         ].forEach(value => {
@@ -1636,12 +1721,11 @@ async function loadAdminDatabaseData() {
         });
         const actionCell = document.createElement('td');
         if (order.payment_proof_url) {
-            const proofLink = document.createElement('a');
-            proofLink.href = order.payment_proof_url;
-            proofLink.target = '_blank';
-            proofLink.rel = 'noopener';
+            const proofLink = document.createElement('button');
+            proofLink.type = 'button';
             proofLink.className = 'admin-proof-link';
             proofLink.innerHTML = '<i class="fa-solid fa-image"></i> Lihat bukti';
+            proofLink.addEventListener('click', () => openPaymentProofModal(order.payment_proof_url));
             actionCell.appendChild(proofLink);
         }
         if (order.payment_method === 'QRIS' && order.payment_status !== 'paid') {
@@ -1655,6 +1739,17 @@ async function loadAdminDatabaseData() {
         row.appendChild(actionCell);
         ordersList.appendChild(row);
     });
+    updateAdminOrderExpandButton(filteredOrders.length);
+}
+
+function updateAdminOrderExpandButton(totalRows) {
+    const button = document.getElementById('adminOrderExpandButton');
+    if (!button) return;
+    button.hidden = totalRows <= 5;
+    button.classList.toggle('is-expanded', adminOrderExpanded);
+    button.innerHTML = adminOrderExpanded
+        ? '<i class="fa-solid fa-chevron-up"></i> Tampilkan lebih sedikit'
+        : '<i class="fa-solid fa-chevron-down"></i> Tampilkan lebih banyak';
 }
 
 async function verifyPaymentOrder(orderId) {
@@ -1828,12 +1923,34 @@ document.addEventListener("DOMContentLoaded", () => {
     if (floatingCart) {
         floatingCart.addEventListener('click', handleCartSummaryClick);
     }
+    const adminOrderSearch = document.getElementById('adminOrderSearch');
+    if (adminOrderSearch) {
+        adminOrderSearch.addEventListener('input', () => {
+            adminOrderSearchQuery = adminOrderSearch.value;
+            loadAdminDatabaseData();
+        });
+    }
+    const adminOrderStatusFilterSelect = document.getElementById('adminOrderStatusFilter');
+    if (adminOrderStatusFilterSelect) {
+        adminOrderStatusFilterSelect.addEventListener('change', () => {
+            adminOrderStatusFilter = adminOrderStatusFilterSelect.value;
+            loadAdminDatabaseData();
+        });
+    }
+    const adminOrderExpandButton = document.getElementById('adminOrderExpandButton');
+    if (adminOrderExpandButton) {
+        adminOrderExpandButton.addEventListener('click', () => {
+            adminOrderExpanded = !adminOrderExpanded;
+            loadAdminDatabaseData();
+        });
+    }
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
         closeReviewThankYou();
         closeCartModal();
         closeProductModal();
         closeAdminGate();
+        closeOrderStatus();
     });
     updateCartUI();
     refreshUserOrdersFromDatabase();
@@ -2181,6 +2298,17 @@ function setupHamburgerNavigation() {
             mobileNavPanel.appendChild(link);
         });
 
+        const themeButton = document.createElement('button');
+        themeButton.type = 'button';
+        themeButton.className = 'nav-hamburger-theme theme-toggle';
+        themeButton.setAttribute('aria-label', 'Ganti tema');
+        themeButton.innerHTML = '<i class="fa-solid fa-moon"></i><span>Ganti tema</span>';
+        themeButton.addEventListener('click', () => {
+            toggleTheme();
+            closeHamburgerMenu();
+        });
+        mobileNavPanel.appendChild(themeButton);
+
         navContainer.appendChild(mobileNavPanel);
     }
 
@@ -2313,4 +2441,36 @@ function deleteAdminComment(commentId) {
         await loadCommentsFromDatabase();
         showAdminToast('Berhasil', 'Komentar telah dihapus.');
     });
+}
+
+async function updateAdminOrderStatus(orderId, nextStatus) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.from('sales_orders').update({ status: nextStatus }).eq('id', orderId);
+    if (error) {
+        console.error('Status pesanan gagal diperbarui:', error);
+        showAdminToast('Database', `Status gagal diperbarui: ${error.message}`);
+        return;
+    }
+    showAdminToast('Status diperbarui', formatOrderStatus(nextStatus));
+    await loadAdminDatabaseData();
+}
+
+function toggleHeaderTools() {
+    const menu = document.getElementById('navToolsMenu');
+    const panel = document.getElementById('navToolsPanel');
+    const toggle = menu?.querySelector('.nav-tools-toggle');
+    if (!menu || !panel || !toggle) return;
+    const isOpen = menu.classList.toggle('is-open');
+    panel.setAttribute('aria-hidden', String(!isOpen));
+    toggle.setAttribute('aria-expanded', String(isOpen));
+}
+
+function closeHeaderTools() {
+    const menu = document.getElementById('navToolsMenu');
+    const panel = document.getElementById('navToolsPanel');
+    const toggle = menu?.querySelector('.nav-tools-toggle');
+    if (!menu || !panel || !toggle) return;
+    menu.classList.remove('is-open');
+    panel.setAttribute('aria-hidden', 'true');
+    toggle.setAttribute('aria-expanded', 'false');
 }

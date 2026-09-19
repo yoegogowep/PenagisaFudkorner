@@ -47,8 +47,9 @@
                 <i class="fa-solid fa-basket-shopping"></i>
                 <span class="cart-badge" id="nav-cart-count">0</span>
             </button>
-            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Aktifkan mode gelap" title="Ganti tema">
-                <i class="fa-solid fa-moon"></i>
+            <button class="order-status-icon-btn" id="orderStatusButton" type="button" aria-label="Lihat status pesanan" title="Lihat status pesanan" onclick="openOrderStatus()">
+                <i class="fa-solid fa-route"></i>
+                <span class="order-status-dot" aria-hidden="true"></span>
             </button>
         </div>
     </header>
@@ -85,17 +86,6 @@
 
             <div id="cartItemsList"></div>
 
-            <section class="user-order-history" aria-labelledby="userOrderHistoryTitle">
-                <div class="user-order-history-heading">
-                    <div>
-                        <span class="section-eyebrow">Pelacakan</span>
-                        <h3 id="userOrderHistoryTitle">Pesanan saya</h3>
-                    </div>
-                    <i class="fa-solid fa-route" aria-hidden="true"></i>
-                </div>
-                <div id="userOrderHistoryList"></div>
-            </section>
-            
             <div id="cartFormContainer">
             <div style="background:var(--bg-light); padding:15px; border-radius:12px; margin:15px 0;">
                 <div class="form-group">
@@ -131,6 +121,25 @@
                 Konfirmasi Pesanan
             </button>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay order-status-modal" id="orderStatusModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size:18px;"><i class="fa-solid fa-route"></i> Status Pesanan</h3>
+                <button class="order-status-close" type="button" onclick="closeOrderStatus()" aria-label="Tutup status pesanan"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <section class="user-order-history" aria-labelledby="userOrderHistoryTitle">
+                <div class="user-order-history-heading">
+                    <div>
+                        <span class="section-eyebrow">Pelacakan</span>
+                        <h3 id="userOrderHistoryTitle">Pesanan saya</h3>
+                    </div>
+                    <i class="fa-solid fa-route" aria-hidden="true"></i>
+                </div>
+                <div id="userOrderHistoryList"></div>
+            </section>
         </div>
     </div>
 

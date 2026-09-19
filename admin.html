@@ -107,12 +107,30 @@
         <div class="info-card">
             <h3><i class="fa-solid fa-database"></i> Data Database</h3>
             <p id="databaseStatus" style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Memuat data Supabase...</p>
+            <div class="admin-order-search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input id="adminOrderSearch" type="search" placeholder="Cari kode pesanan atau nama pelanggan..." aria-label="Cari kode pesanan atau nama pelanggan" autocomplete="off">
+            </div>
+            <div class="admin-order-controls">
+                <label class="admin-order-control">
+                    <span>Status</span>
+                    <select id="adminOrderStatusFilter" aria-label="Filter status pesanan">
+                        <option value="all">Semua pesanan</option>
+                        <option value="processing">Masih proses</option>
+                        <option value="completed">Sudah selesai</option>
+                        <option value="cancelled">Dibatalkan</option>
+                    </select>
+                </label>
+                <button class="admin-order-expand-btn" id="adminOrderExpandButton" type="button" hidden>
+                    <i class="fa-solid fa-chevron-down"></i> Tampilkan lebih banyak
+                </button>
+            </div>
             <div class="admin-database-table-wrap">
                 <table class="admin-database-table">
                     <thead>
-                        <tr><th>Waktu</th><th>Nama</th><th>Pesanan</th><th>Alamat</th><th>Status</th><th>Pembayaran</th><th>Total</th><th>Aksi</th></tr>
+                        <tr><th>Kode</th><th>Waktu</th><th>Nama</th><th>Pesanan</th><th>Alamat</th><th>Status</th><th>Pembayaran</th><th>Total</th><th>Aksi</th></tr>
                     </thead>
-                    <tbody id="databaseOrdersList"><tr><td colspan="8">Belum ada data.</td></tr></tbody>
+                    <tbody id="databaseOrdersList"><tr><td colspan="9">Belum ada data.</td></tr></tbody>
                 </table>
             </div>
         </div>
