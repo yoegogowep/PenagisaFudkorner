@@ -812,7 +812,7 @@ function startOrderConfirmation() {
 
     pendingOrder = { name, type, address, note };
     setOrderActionButton('Konfirmasi ke WhatsApp', true);
-    handlePaymentMethodChange();
+    if (paymentMethod === 'QRIS') openQrisPaymentModal();
 }
 
 function handlePaymentMethodChange() {
@@ -823,11 +823,6 @@ function handlePaymentMethodChange() {
         qrisPaymentConfirmed = false;
         qrisPaymentProofFile = null;
         resetQrisPaymentModal();
-        const modal = document.getElementById('qrisPaymentModal');
-        if (modal) {
-            modal.classList.add('active');
-            modal.setAttribute('aria-hidden', 'false');
-        }
         return;
     }
 
@@ -839,6 +834,13 @@ function closeQrisPaymentModal() {
     if (!modal) return;
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
+}
+
+function openQrisPaymentModal() {
+    const modal = document.getElementById('qrisPaymentModal');
+    if (!modal) return;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
 }
 
 function resetQrisPaymentModal() {
@@ -900,11 +902,7 @@ async function sendOrderToWhatsApp() {
     }
 
     if (paymentMethod === 'QRIS' && !qrisPaymentConfirmed) {
-        const modal = document.getElementById('qrisPaymentModal');
-        if (modal) {
-            modal.classList.add('active');
-            modal.setAttribute('aria-hidden', 'false');
-        }
+        openQrisPaymentModal();
         showInlineAlert('Selesaikan pembayaran QRIS dan unggah bukti transfer terlebih dahulu.');
         return;
     }
