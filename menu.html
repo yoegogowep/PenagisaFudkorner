@@ -84,6 +84,17 @@
             </div>
 
             <div id="cartItemsList"></div>
+
+            <section class="user-order-history" aria-labelledby="userOrderHistoryTitle">
+                <div class="user-order-history-heading">
+                    <div>
+                        <span class="section-eyebrow">Pelacakan</span>
+                        <h3 id="userOrderHistoryTitle">Pesanan saya</h3>
+                    </div>
+                    <i class="fa-solid fa-route" aria-hidden="true"></i>
+                </div>
+                <div id="userOrderHistoryList"></div>
+            </section>
             
             <div id="cartFormContainer">
             <div style="background:var(--bg-light); padding:15px; border-radius:12px; margin:15px 0;">
@@ -120,6 +131,17 @@
                 Konfirmasi Pesanan
             </button>
             </div>
+        </div>
+    </div>
+
+    <div class="payment-proof-modal" id="paymentProofPreviewModal" aria-hidden="true">
+        <div class="payment-proof-modal-backdrop" onclick="closePaymentProofModal()"></div>
+        <div class="payment-proof-modal-content" role="dialog" aria-modal="true" aria-labelledby="paymentProofPreviewTitle">
+            <button class="payment-modal-close" type="button" onclick="closePaymentProofModal()" aria-label="Tutup bukti pembayaran"><i class="fa-solid fa-xmark"></i></button>
+            <span class="payment-modal-kicker">Bukti pembayaran</span>
+            <h3 id="paymentProofPreviewTitle">Bukti asli pesanan</h3>
+            <img id="paymentProofPreviewImage" class="payment-proof-preview-image" src="" alt="Bukti pembayaran pesanan">
+            <a id="paymentProofPreviewLink" class="payment-proof-original-link" href="">Buka link asli</a>
         </div>
     </div>
 

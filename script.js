@@ -2,6 +2,18 @@
 const NOMOR_WA_UMKM = "6282135783347";
 const THEME_KEY = "umkm_theme";
 const PURCHASED_PRODUCTS_KEY = "umkm_purchased_products";
+const USER_ORDERS_KEY = "umkm_user_orders";
+const ORDER_STATUS_LABELS = {
+    new: 'Menunggu konfirmasi',
+    queued: 'Dalam antrian',
+    preparing: 'Sedang dibuat',
+    waiting_courier: 'Menunggu kurir',
+    on_the_way: 'Dihantar',
+    delivered: 'Sudah sampai',
+    cancelled: 'Dibatalkan',
+    confirmed: 'Dikonfirmasi',
+    completed: 'Selesai'
+};
 const DEFAULT_REVIEWS = [
     {
         name: "Ipul",
@@ -93,7 +105,7 @@ async function loadCommentsFromDatabase() {
 }
 
 async function saveOrderToDatabase(order, items) {
-    if (!supabaseClient) return true;
+    if (!supabaseClient) return { id: null };
     const { data, error } = await supabaseClient.from('sales_orders').insert(order).select('id').single();
     if (error || !data) {
         console.error('Pesanan gagal disimpan ke database:', error);
@@ -104,7 +116,82 @@ async function saveOrderToDatabase(order, items) {
         items.map(item => ({ ...item, order_id: data.id }))
     );
     if (itemError) console.error('Detail pesanan gagal disimpan:', itemError);
-    return !itemError;
+    return itemError ? false : { id: data.id };
+}
+
+function getUserLocalOrders() {
+    try {
+        return JSON.parse(localStorage.getItem(USER_ORDERS_KEY)) || [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function saveUserLocalOrders(orders) {
+    localStorage.setItem(USER_ORDERS_KEY, JSON.stringify(orders));
+}
+
+function formatOrderStatus(status) {
+    return ORDER_STATUS_LABELS[status] || 'Menunggu konfirmasi';
+}
+
+function addUserOrderRecord(orderData) {
+    const orders = getUserLocalOrders();
+    const record = {
+        id: orderData.id || `local-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        created_at: orderData.created_at || new Date().toISOString(),
+        customer_name: orderData.customer_name || 'Pelanggan',
+        order_type: orderData.order_type || 'Delivery',
+        address: orderData.address || '-',
+        note: orderData.note || '',
+        total_amount: Number(orderData.total_amount || 0),
+        payment_method: orderData.payment_method || 'COD',
+        payment_status: orderData.payment_status || 'pending',
+        payment_proof_url: orderData.payment_proof_url || '',
+        status: orderData.status || 'new',
+        items: Array.isArray(orderData.items) ? orderData.items : []
+    };
+    orders.unshift(record);
+    saveUserLocalOrders(orders);
+    return record;
+}
+
+function cancelUserOrder(orderId) {
+    const orders = getUserLocalOrders();
+    const target = orders.find(order => order.id === orderId);
+    if (!target) return false;
+    if (!['new', 'queued'].includes(target.status)) {
+        showInlineAlert('Pesanan hanya bisa dibatalkan sebelum dibuat atau saat masih dalam antrian.');
+        return false;
+    }
+    target.status = 'cancelled';
+    saveUserLocalOrders(orders);
+    renderMyOrdersInCart();
+    if (supabaseClient && !String(orderId).startsWith('local-')) {
+        supabaseClient.from('sales_orders').update({ status: 'cancelled' }).eq('id', orderId).then(({ error }) => {
+            if (error) console.error('Gagal membatalkan pesanan di database:', error);
+        });
+    }
+    showInlineAlert('Pesanan berhasil dibatalkan.');
+    return true;
+}
+
+function openPaymentProofModal(url) {
+    const modal = document.getElementById('paymentProofPreviewModal');
+    const image = document.getElementById('paymentProofPreviewImage');
+    const link = document.getElementById('paymentProofPreviewLink');
+    if (!modal || !image || !link || !url) return;
+    image.src = url;
+    link.href = url;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function closePaymentProofModal() {
+    const modal = document.getElementById('paymentProofPreviewModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
 }
 
 function applyTheme(theme) {
@@ -698,6 +785,71 @@ function goToMenu() {
 }
 
 // UPDATE TAMPILAN KERANJANG
+function renderMyOrdersInCart() {
+    const historyList = document.getElementById('userOrderHistoryList');
+    if (!historyList) return;
+
+    const orders = getUserLocalOrders();
+    if (!orders.length) {
+        historyList.innerHTML = '<p class="cart-empty-order">Belum ada pesanan yang dibuat.</p>';
+        return;
+    }
+
+    historyList.innerHTML = orders.map((order) => {
+        const canCancel = ['new', 'queued'].includes(order.status);
+        const statusClass = order.status === 'cancelled' ? 'status-cancelled' : order.status === 'delivered' ? 'status-delivered' : 'status-active';
+        return `
+            <div class="user-order-item">
+                <div class="user-order-top-row">
+                    <strong>#${String(order.id).slice(0, 8)}</strong>
+                    <span class="status-pill ${statusClass}">${formatOrderStatus(order.status)}</span>
+                </div>
+                <div class="user-order-meta">${new Date(order.created_at).toLocaleString('id-ID')} • ${order.order_type}</div>
+                <div class="user-order-meta">Total: Rp ${Number(order.total_amount || 0).toLocaleString('id-ID')}</div>
+                <div class="user-order-items">${(order.items || []).map((item) => `${item.product_name} x${item.quantity}`).join(', ') || '-'}</div>
+                <div class="user-order-actions">
+                    ${order.payment_proof_url ? `<button type="button" class="proof-preview-btn" data-proof-url="${order.payment_proof_url}">Lihat bukti</button>` : ''}
+                    ${canCancel ? `<button type="button" class="cancel-order-btn" data-order-id="${order.id}">Batalkan</button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    historyList.querySelectorAll('.proof-preview-btn').forEach((button) => {
+        button.addEventListener('click', () => openPaymentProofModal(button.dataset.proofUrl));
+    });
+    historyList.querySelectorAll('.cancel-order-btn').forEach((button) => {
+        button.addEventListener('click', () => cancelUserOrder(button.dataset.orderId));
+    });
+}
+
+async function refreshUserOrdersFromDatabase() {
+    if (!supabaseClient) return;
+    const localOrders = getUserLocalOrders();
+    const orderIds = localOrders.filter((order) => !String(order.id).startsWith('local-')).map((order) => order.id);
+    if (!orderIds.length) return;
+
+    const { data, error } = await supabaseClient.from('sales_orders')
+        .select('id, status, payment_status, payment_proof_url')
+        .in('id', orderIds);
+    if (error || !data) return;
+
+    let changed = false;
+    data.forEach((serverOrder) => {
+        const localOrder = localOrders.find((order) => order.id === serverOrder.id);
+        if (!localOrder) return;
+        const proofUrl = serverOrder.payment_proof_url || '';
+        if (localOrder.status !== serverOrder.status || localOrder.payment_status !== serverOrder.payment_status || localOrder.payment_proof_url !== proofUrl) {
+            Object.assign(localOrder, { status: serverOrder.status, payment_status: serverOrder.payment_status, payment_proof_url: proofUrl });
+            changed = true;
+        }
+    });
+    if (changed) {
+        saveUserLocalOrders(localOrders);
+        renderMyOrdersInCart();
+    }
+}
+
 function updateCartUI() {
     let totalQty = 0;
     let totalPrice = 0;
@@ -775,6 +927,8 @@ function updateCartUI() {
         cartButton.classList.toggle('has-items', totalQty > 0);
         cartButton.setAttribute('aria-label', totalQty > 0 ? `Lihat pesanan, ${totalQty} item` : 'Keranjang kosong');
     }
+
+    renderMyOrdersInCart();
 }
 
 function toggleCartModal() {
@@ -1041,6 +1195,23 @@ async function completeOrder() {
     localStorage.setItem(PURCHASED_PRODUCTS_KEY, JSON.stringify([
         ...new Set([...purchasedProducts, ...orderedProducts])
     ]));
+    addUserOrderRecord({
+        id: saved.id,
+        customer_name: name,
+        order_type: type,
+        address: type === 'Delivery' ? address : '-',
+        note: note || '',
+        total_amount: total,
+        payment_method: paymentMethod,
+        payment_status: paymentMethod === 'QRIS' ? 'awaiting_verification' : 'cod_confirmed',
+        payment_proof_url: paymentProofUrl || '',
+        status: 'new',
+        items: orderItems.map((item) => ({
+            product_name: item.product_name,
+            quantity: item.quantity,
+            unit_price: item.unit_price
+        }))
+    });
     cart = {};
     pendingOrder = null;
     qrisPaymentConfirmed = false;
@@ -1414,14 +1585,15 @@ async function loadAdminDatabaseData() {
         return;
     }
 
-    const [dashboardResult, ordersResult] = await Promise.all([
+    const [dashboardResult, ordersResult, menuSalesResult] = await Promise.all([
         supabaseClient.from('admin_dashboard').select('*').single(),
-        supabaseClient.from('sales_orders').select('id, created_at, customer_name, order_type, address, status, payment_method, payment_status, payment_proof_url, total_amount').order('created_at', { ascending: false }).limit(10)
+        supabaseClient.from('sales_orders').select('id, created_at, customer_name, order_type, address, status, payment_method, payment_status, payment_proof_url, total_amount').order('created_at', { ascending: false }).limit(10),
+        supabaseClient.from('menu_sales_summary').select('product_name, total_quantity, total_sales').order('total_sales', { ascending: false })
     ]);
 
-    if (dashboardResult.error || ordersResult.error) {
+    if (dashboardResult.error || ordersResult.error || menuSalesResult.error) {
         status.textContent = 'Database terhubung, tetapi belum bisa dibaca. Jalankan database.sql dan periksa policy Supabase.';
-        console.error('Data dashboard gagal dimuat:', dashboardResult.error || ordersResult.error);
+        console.error('Data dashboard gagal dimuat:', dashboardResult.error || ordersResult.error || menuSalesResult.error);
         return;
     }
 
@@ -1430,6 +1602,16 @@ async function loadAdminDatabaseData() {
     document.getElementById('dbTotalOrders').textContent = summary.total_orders ?? 0;
     document.getElementById('dbTotalSales').textContent = `Rp ${Number(summary.total_sales || 0).toLocaleString('id-ID')}`;
     status.textContent = `Terakhir diperbarui ${new Date().toLocaleString('id-ID')}. Menampilkan 10 pesanan terbaru.`;
+
+    const menuSalesList = document.getElementById('menuSalesList');
+    if (menuSalesList) {
+        menuSalesList.innerHTML = menuSalesResult.data.length ? menuSalesResult.data.map((item) => `
+            <div class="menu-sales-row">
+                <div><strong>${item.product_name}</strong><span>${Number(item.total_quantity || 0)} terjual</span></div>
+                <strong>Rp ${Number(item.total_sales || 0).toLocaleString('id-ID')}</strong>
+            </div>
+        `).join('') : '<p class="admin-empty-state">Belum ada data penjualan menu.</p>';
+    }
 
     ordersList.innerHTML = '';
     if (!ordersResult.data.length) {
@@ -1654,6 +1836,7 @@ document.addEventListener("DOMContentLoaded", () => {
         closeAdminGate();
     });
     updateCartUI();
+    refreshUserOrdersFromDatabase();
     if (Object.keys(cart).length > 0) refreshCartActivity();
     // Setup orderType visibility handling (show address only for Delivery)
     const orderSelect = document.getElementById('orderType');

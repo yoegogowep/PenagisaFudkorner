@@ -31,7 +31,7 @@ create table if not exists public.sales_orders (
     order_type text not null check (order_type in ('Delivery', 'Takeaway')),
     address text,
     note text,
-    status text not null default 'new' check (status in ('new', 'confirmed', 'completed', 'cancelled')),
+    status text not null default 'new' check (status in ('new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered', 'confirmed', 'completed', 'cancelled')),
     total_amount numeric(12, 2) not null default 0 check (total_amount >= 0),
     whatsapp_sent_at timestamptz,
     created_at timestamptz not null default now()
@@ -42,6 +42,8 @@ alter table public.sales_orders add column if not exists payment_status text not
 alter table public.sales_orders add column if not exists payment_confirmed_at timestamptz;
 alter table public.sales_orders add column if not exists payment_proof_url text;
 alter table public.sales_orders add column if not exists address text;
+alter table public.sales_orders drop constraint if exists sales_orders_status_check;
+alter table public.sales_orders add constraint sales_orders_status_check check (status in ('new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered', 'confirmed', 'completed', 'cancelled'));
 
 create table if not exists public.sales_order_items (
     id uuid primary key default gen_random_uuid(),
@@ -58,6 +60,16 @@ create index if not exists link_clicks_clicked_at_idx on public.link_clicks (cli
 create index if not exists sales_orders_created_at_idx on public.sales_orders (created_at desc);
 create index if not exists sales_orders_status_idx on public.sales_orders (status);
 create index if not exists sales_order_items_order_id_idx on public.sales_order_items (order_id);
+
+create or replace view public.menu_sales_summary as
+select
+    soi.product_name,
+    sum(soi.quantity)::integer as total_quantity,
+    sum(soi.subtotal) as total_sales
+from public.sales_order_items soi
+join public.sales_orders so on so.id = soi.order_id
+where so.status <> 'cancelled'
+group by soi.product_name;
 
 insert into storage.buckets (id, name, public)
 values ('payment-proofs', 'payment-proofs', true)
@@ -129,13 +141,20 @@ drop policy if exists "admin can update sales orders" on public.sales_orders;
 create policy "admin can update sales orders"
     on public.sales_orders for update
     using (true)
-    with check (payment_status in ('pending', 'awaiting_verification', 'paid', 'cod_confirmed'));
+    with check (
+        payment_status in ('pending', 'awaiting_verification', 'paid', 'cod_confirmed')
+        and status in ('new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered', 'confirmed', 'completed', 'cancelled')
+    );
 
 alter table public.sales_order_items enable row level security;
 drop policy if exists "public can submit order items" on public.sales_order_items;
 create policy "public can submit order items"
     on public.sales_order_items for insert
     with check (true);
+drop policy if exists "public can read order items" on public.sales_order_items;
+create policy "public can read order items"
+    on public.sales_order_items for select
+    using (true);
 
 -- Aktifkan policy SELECT/UPDATE/DELETE untuk role admin/authenticated sesuai
 -- sistem login yang dipakai saat frontend mulai membaca dashboard ini.

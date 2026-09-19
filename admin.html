@@ -93,6 +93,17 @@
             </div>
         </div>
 
+        <div class="info-card menu-sales-card">
+            <div class="admin-section-heading">
+                <div>
+                    <span class="section-eyebrow">Performa produk</span>
+                    <h3><i class="fa-solid fa-chart-column"></i> Total penjualan setiap menu</h3>
+                </div>
+                <i class="fa-solid fa-ranking-star admin-heading-icon" aria-hidden="true"></i>
+            </div>
+            <div id="menuSalesList" class="menu-sales-list"><p class="admin-empty-state">Memuat penjualan menu...</p></div>
+        </div>
+
         <div class="info-card">
             <h3><i class="fa-solid fa-database"></i> Data Database</h3>
             <p id="databaseStatus" style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Memuat data Supabase...</p>
@@ -128,6 +139,17 @@
         <div class="info-card">
             <h3><i class="fa-solid fa-circle-info"></i> Menu, Harga & Kontak</h3>
             <p>Daftar menu, harga, dan nomor WhatsApp saat ini diatur langsung di <code>script.js</code>, sedangkan alamat dan kontak diatur di <code>alamat.html</code> dan <code>kontak.html</code>, sesuai catatan pada README proyek.</p>
+        </div>
+    </div>
+
+    <div class="payment-proof-modal" id="paymentProofPreviewModal" aria-hidden="true">
+        <div class="payment-proof-modal-backdrop" onclick="closePaymentProofModal()"></div>
+        <div class="payment-proof-modal-content" role="dialog" aria-modal="true" aria-labelledby="paymentProofPreviewTitle">
+            <button class="payment-modal-close" type="button" onclick="closePaymentProofModal()" aria-label="Tutup bukti pembayaran"><i class="fa-solid fa-xmark"></i></button>
+            <span class="payment-modal-kicker">Bukti pembayaran</span>
+            <h3 id="paymentProofPreviewTitle">Bukti asli pesanan</h3>
+            <img id="paymentProofPreviewImage" class="payment-proof-preview-image" src="" alt="Bukti pembayaran pesanan">
+            <a id="paymentProofPreviewLink" class="payment-proof-original-link" href="">Buka link asli</a>
         </div>
     </div>
 
