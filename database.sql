@@ -145,6 +145,10 @@ create policy "admin can update sales orders"
         payment_status in ('pending', 'awaiting_verification', 'paid', 'cod_confirmed')
         and status in ('new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered', 'confirmed', 'completed', 'cancelled')
     );
+drop policy if exists "admin can delete sales orders" on public.sales_orders;
+create policy "admin can delete sales orders"
+    on public.sales_orders for delete
+    using (true);
 
 alter table public.sales_order_items enable row level security;
 drop policy if exists "public can submit order items" on public.sales_order_items;

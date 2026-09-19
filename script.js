@@ -1736,10 +1736,34 @@ async function loadAdminDatabaseData() {
             verifyButton.addEventListener('click', () => verifyPaymentOrder(order.id));
             actionCell.appendChild(verifyButton);
         }
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'admin-order-delete-btn';
+        deleteButton.innerHTML = '<i class="fa-solid fa-trash-can"></i> Hapus';
+        deleteButton.addEventListener('click', () => {
+            openAdminConfirm(
+                'Hapus pesanan?',
+                `Pesanan ${String(order.id).slice(0, 8).toUpperCase()} milik ${order.customer_name} akan dihapus permanen.`,
+                () => deleteAdminOrder(order.id)
+            );
+        });
+        actionCell.appendChild(deleteButton);
         row.appendChild(actionCell);
         ordersList.appendChild(row);
     });
     updateAdminOrderExpandButton(filteredOrders.length);
+}
+
+async function deleteAdminOrder(orderId) {
+    if (!supabaseClient || !orderId) return;
+    const { error } = await supabaseClient.from('sales_orders').delete().eq('id', orderId);
+    if (error) {
+        console.error('Pesanan gagal dihapus:', error);
+        showAdminToast('Database', `Pesanan gagal dihapus: ${error.message}`);
+        return;
+    }
+    showAdminToast('Berhasil', 'Pesanan telah dihapus.');
+    await loadAdminDatabaseData();
 }
 
 function updateAdminOrderExpandButton(totalRows) {
