@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="logo-penagisa.png?v=4">
-    <title>Gallery - Penagisa Food Corner</title>
+    <title>Gallery Menu - Penagisa Food Corner</title>
     <script>
         if (localStorage.getItem('umkm_theme') === 'dark') {
             document.documentElement.dataset.theme = 'dark';
@@ -52,71 +52,43 @@
         </div>
     </header>
 
-    <main class="page-container gallery-page">
-        <section class="gallery-hero" aria-labelledby="galleryTitle">
-            <div>
-                <span class="gallery-kicker"><i class="fa-solid fa-camera-retro"></i> Cerita dalam setiap sajian</span>
-                <h1 class="page-title" id="galleryTitle">Gallery Rasa Penagisa</h1>
-                <p class="page-subtitle">Jelajahi tampilan menu favorit kami sebelum menentukan pesananmu.</p>
-            </div>
-            <div class="gallery-hero-mark" aria-hidden="true"><i class="fa-solid fa-bowl-food"></i></div>
-        </section>
-
-        <div class="gallery-toolbar">
-            <div>
-                <span class="gallery-kicker">Koleksi visual</span>
-                <h2>Yang Lagi Menggoda</h2>
-            </div>
-            <div class="gallery-filters" role="group" aria-label="Filter gallery">
-                <button class="gallery-filter is-active" type="button" data-gallery-filter="all">Semua</button>
-                <button class="gallery-filter" type="button" data-gallery-filter="makanan">Makanan</button>
-                <button class="gallery-filter" type="button" data-gallery-filter="minuman">Minuman</button>
-            </div>
+    <main class="page-container galeri-page">
+        <div class="galeri-head">
+            <h1 class="page-title">Gallery Menu</h1>
+            <p class="page-subtitle">Foto menu yang dijual di stand kami. Ketuk foto untuk memperbesar.</p>
         </div>
 
-        <section class="gallery-grid" aria-label="Foto produk">
-            <article class="gallery-item gallery-item-featured" data-gallery-category="makanan">
-                <img src="https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=1200&q=85" alt="Gyoza Kuah" loading="eager">
-                <div class="gallery-item-overlay"><span>Favorit pelanggan</span><h3>Gyoza Kuah</h3><p>Hangat, gurih, dan lembut.</p></div>
-                <button class="gallery-view-button" type="button" aria-label="Lihat foto Gyoza Kuah"><i class="fa-solid fa-expand"></i></button>
-            </article>
-            <article class="gallery-item" data-gallery-category="minuman">
-                <img src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=85" alt="Cappucino Cincau" loading="lazy">
-                <div class="gallery-item-overlay"><span>Minuman segar</span><h3>Cappucino Cincau</h3><p>Manis, creamy, dan dingin.</p></div>
-                <button class="gallery-view-button" type="button" aria-label="Lihat foto Cappucino Cincau"><i class="fa-solid fa-expand"></i></button>
-            </article>
-            <article class="gallery-item" data-gallery-category="makanan">
-                <img src="https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=85" alt="Cilok Lava" loading="lazy">
-                <div class="gallery-item-overlay"><span>Pedasnya nagih</span><h3>Cilok Lava</h3><p>Kenyal dengan saus berani.</p></div>
-                <button class="gallery-view-button" type="button" aria-label="Lihat foto Cilok Lava"><i class="fa-solid fa-expand"></i></button>
-            </article>
-            <article class="gallery-item" data-gallery-category="makanan">
-                <img src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=85" alt="Cilok Clasik" loading="lazy">
-                <div class="gallery-item-overlay"><span>Teman santai</span><h3>Cilok Clasik</h3><p>Sederhana, hangat, dan akrab.</p></div>
-                <button class="gallery-view-button" type="button" aria-label="Lihat foto Cilok Clasik"><i class="fa-solid fa-expand"></i></button>
-            </article>
-            <article class="gallery-item gallery-item-wide" data-gallery-category="minuman">
-                <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=85" alt="Kopi susu dingin" loading="lazy">
-                <div class="gallery-item-overlay"><span>Jeda paling nikmat</span><h3>Teman Ngopi</h3><p>Pas untuk menemani obrolan sore.</p></div>
-                <button class="gallery-view-button" type="button" aria-label="Lihat foto Teman Ngopi"><i class="fa-solid fa-expand"></i></button>
-            </article>
-            <article class="gallery-item" data-gallery-category="makanan">
-                <img src="https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=85" alt="Sajian hangat" loading="lazy">
-                <div class="gallery-item-overlay"><span>Baru disajikan</span><h3>Hangat di Meja</h3><p>Aroma yang bikin ingin mencoba.</p></div>
-                <button class="gallery-view-button" type="button" aria-label="Lihat foto Hangat di Meja"><i class="fa-solid fa-expand"></i></button>
-            </article>
-        </section>
+        <div class="galeri-bar">
+            <div class="galeri-filters" role="group" aria-label="Pilih menu gallery">
+                <button class="galeri-chip" type="button" data-galeri-menu="1" aria-pressed="true">Cappucino Cincau</button>
+                <button class="galeri-chip" type="button" data-galeri-menu="2" aria-pressed="false">Gyoza Kuah</button>
+                <button class="galeri-chip" type="button" data-galeri-menu="4" aria-pressed="false">Cilok Clasik</button>
+            </div>
+            <p class="galeri-count" id="galeriCount" role="status" aria-live="polite"></p>
+        </div>
 
-        <section class="gallery-callout">
-            <div><span class="gallery-kicker">Sudah menemukan favorit?</span><h2>Lihat menu dan pesan sekarang.</h2></div>
-            <a class="primary-btn" href="menu.html">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
-        </section>
+        <div class="galeri-list" id="galeriList"></div>
+
+        <div class="galeri-empty" id="galeriEmpty" hidden>
+            <strong>Belum ada foto</strong>
+            <p id="galeriEmptyText"></p>
+            <a href="menu.html">Lihat semua menu</a>
+        </div>
+
+        <div class="galeri-cta">
+            <p>Sudah menemukan menu yang kamu suka? Langsung pesan dari halaman menu.</p>
+            <a class="galeri-cta-btn" id="galeriOrderButton" href="menu.html"><i class="fa-solid fa-basket-shopping" aria-hidden="true"></i> Pesan</a>
+        </div>
     </main>
 
-    <div class="gallery-lightbox" id="galleryLightbox" aria-hidden="true">
-        <button class="gallery-lightbox-close" type="button" aria-label="Tutup foto"><i class="fa-solid fa-xmark"></i></button>
-        <img id="galleryLightboxImage" src="" alt="">
-        <p id="galleryLightboxCaption"></p>
+    <div class="galeri-lightbox" id="galeriLightbox" role="dialog" aria-modal="true" aria-label="Foto menu diperbesar" hidden>
+        <button class="galeri-lb-btn galeri-lb-close" type="button" aria-label="Tutup foto"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        <button class="galeri-lb-btn galeri-lb-prev" type="button" aria-label="Foto sebelumnya"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+        <figure class="galeri-lb-figure">
+            <img id="galeriLbImage" alt="">
+            <figcaption id="galeriLbCaption"></figcaption>
+        </figure>
+        <button class="galeri-lb-btn galeri-lb-next" type="button" aria-label="Foto berikutnya"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
     </div>
 
     <footer class="site-footer">

@@ -1,6 +1,7 @@
 // Ganti nomor WhatsApp UMKM di sini (gunakan format 62)
 const NOMOR_WA_UMKM = "6282135783347";
 const THEME_KEY = "umkm_theme";
+const PURCHASED_PRODUCTS_KEY = "umkm_purchased_products";
 const DEFAULT_REVIEWS = [
     {
         name: "Ipul",
@@ -172,7 +173,12 @@ const menuItems = [
         images: [
             "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80",
             "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=900&q=80"
+            "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1461025272758-3c92a5d8b1a3?auto=format&fit=crop&w=900&q=80"
         ]
     },
     {
@@ -188,7 +194,12 @@ const menuItems = [
         images: [
             "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=900&q=80",
             "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80"
+            "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=900&q=80"
         ]
     },
 
@@ -205,7 +216,12 @@ const menuItems = [
         images: [
             "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80",
             "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80"
+            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1461025272758-3c92a5d8b1a3?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=900&q=80"
         ]
     },
     {
@@ -300,17 +316,19 @@ function renderMenu(items) {
             <div class="card-body">
                 <h3 class="card-title">${item.name}</h3>
                 <p class="card-desc">${item.shortDesc}</p>
-                <div class="card-rating" aria-label="Rating ${item.rating} dari 5 bintang">
-                    <span class="card-rating-stars">★★★★★</span>
-                    <strong>${item.rating.toFixed(1)}</strong>
-                </div>
+                ${item.comingSoon ? '' : `
+                    <div class="card-rating" aria-label="Rating ${item.rating} dari 5 bintang">
+                        <span class="card-rating-stars">${'★'.repeat(Math.round(item.rating))}${'☆'.repeat(5 - Math.round(item.rating))}</span>
+                        <strong>${item.rating.toFixed(1)}</strong>
+                    </div>
+                `}
                 <div class="card-footer">
                     ${item.comingSoon ? `
                         <span class="coming-soon-label"><i class="fa-solid fa-clock"></i> Segera Hadir</span>
                     ` : `
                         <span class="card-price">Rp ${item.price.toLocaleString('id-ID')}</span>
                         <div class="menu-actions">
-                            <a href="review.html" class="review-btn">Review</a>
+                            <a href="review.html?menu=${encodeURIComponent(item.name)}" class="review-btn">Review</a>
                             <button class="add-btn" data-id="${item.id}">+ Tambah</button>
                         </div>
                     `}
@@ -497,6 +515,30 @@ function getReviewAverage(reviews) {
     return Math.min(5, Math.max(1, totalRating / reviews.length));
 }
 
+function getCurrentReviews() {
+    const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
+    return storedReviews.length > 0 ? storedReviews : DEFAULT_REVIEWS;
+}
+
+function syncRatings(reviews = getCurrentReviews()) {
+    const averageRating = getReviewAverage(reviews);
+    const ratingText = averageRating.toFixed(1);
+
+    menuItems.forEach((item) => {
+        if (item.baseRating === undefined) item.baseRating = item.rating;
+
+        const productReviews = reviews.filter((review) => review.food === item.name);
+        item.rating = productReviews.length > 0
+            ? getReviewAverage(productReviews)
+            : item.baseRating;
+    });
+
+    const infoRating = document.getElementById('infoAverageRating');
+    if (infoRating) infoRating.textContent = `${ratingText} / 5`;
+
+    return averageRating;
+}
+
 function renderReviewSummary(reviews) {
     const averageRating = getReviewAverage(reviews);
     const averageRatingText = averageRating.toFixed(1);
@@ -515,8 +557,8 @@ function renderReviews(highlightLatest = false) {
     const reviewList = document.getElementById('reviewList');
     if (!reviewList) return;
 
-    const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
-    const reviews = storedReviews.length > 0 ? storedReviews : DEFAULT_REVIEWS;
+    const reviews = getCurrentReviews();
+    syncRatings(reviews);
     renderReviewSummary(reviews);
     reviewList.innerHTML = '';
 
@@ -551,6 +593,29 @@ function setupReviewForm() {
 
     const stars = form.querySelectorAll('.star-btn');
     const ratingInput = document.getElementById('reviewRating');
+    const foodInput = document.getElementById('reviewFood');
+    const eligibilityMessage = document.getElementById('reviewEligibilityMessage');
+    const purchasedProducts = JSON.parse(localStorage.getItem(PURCHASED_PRODUCTS_KEY)) || [];
+    const selectedMenu = new URLSearchParams(window.location.search).get('menu');
+
+    const menuOptions = Array.from(foodInput.options).filter((option) => option.value && purchasedProducts.includes(option.value));
+    foodInput.innerHTML = '<option value="">Pilih menu yang dibeli</option>';
+    menuOptions.forEach((option) => foodInput.appendChild(option));
+
+    if (!purchasedProducts.length) {
+        if (eligibilityMessage) eligibilityMessage.textContent = 'Review hanya dapat diberikan setelah kamu menyelesaikan pembelian.';
+        form.querySelectorAll('input:not(#reviewRating), select, textarea, .star-btn, button[type="submit"]').forEach((control) => {
+            control.disabled = true;
+        });
+        return;
+    }
+
+    if (eligibilityMessage) eligibilityMessage.textContent = 'Pilih produk yang sudah kamu beli, lalu bagikan pengalamanmu.';
+
+    if (selectedMenu && purchasedProducts.includes(selectedMenu)) {
+        foodInput.value = selectedMenu;
+    }
+
     stars.forEach((star) => {
         star.addEventListener('click', () => {
             const rating = Number(star.dataset.rating);
@@ -564,6 +629,10 @@ function setupReviewForm() {
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        if (!purchasedProducts.includes(foodInput.value)) {
+            showInlineAlert('Kamu hanya dapat mereview produk yang sudah dibeli.');
+            return;
+        }
         const rating = Number(ratingInput.value);
         if (!rating) {
             showInlineAlert('Silakan pilih rating bintang terlebih dahulu.');
@@ -584,6 +653,8 @@ function setupReviewForm() {
         form.reset();
         ratingInput.value = '0';
         stars.forEach((button) => button.classList.remove('is-selected'));
+        syncRatings(reviews);
+        renderMenu(menuItems);
         renderReviews(true);
         showReviewThankYou();
     });
@@ -782,7 +853,7 @@ function setOrderActionButton(label, showWhatsappIcon) {
 
 function startOrderConfirmation() {
     if (pendingOrder) {
-        sendOrderToWhatsApp();
+        completeOrder();
         return;
     }
 
@@ -811,7 +882,7 @@ function startOrderConfirmation() {
     }
 
     pendingOrder = { name, type, address, note };
-    setOrderActionButton('Konfirmasi ke WhatsApp', true);
+    setOrderActionButton('Lanjutkan Pembayaran', false);
     if (paymentMethod === 'QRIS') openQrisPaymentModal();
 }
 
@@ -826,7 +897,7 @@ function handlePaymentMethodChange() {
         return;
     }
 
-    setOrderActionButton('Konfirmasi ke WhatsApp', true);
+    setOrderActionButton('Lanjutkan Pembayaran', false);
 }
 
 function closeQrisPaymentModal() {
@@ -884,12 +955,10 @@ function confirmQrisPayment() {
     }
     qrisPaymentConfirmed = true;
     closeQrisPaymentModal();
-    showInlineAlert('Bukti transfer siap dikirim. Silakan konfirmasi pesanan ke WhatsApp.', 4000);
-    setOrderActionButton('Konfirmasi ke WhatsApp', true);
+    completeOrder();
 }
 
-// KIRIM KE WHATSAPP setelah metode pembayaran dipilih
-async function sendOrderToWhatsApp() {
+async function completeOrder() {
     if (!pendingOrder) {
         startOrderConfirmation();
         return;
@@ -919,31 +988,13 @@ async function sendOrderToWhatsApp() {
         };
     });
 
-    let text = `*PESANAN BARU - Penagisa Food Corner* 🍽️\n\n`;
-    text += `*Rincian Pesanan:*\n`;
-
     let total = 0;
-    Object.keys(cart).forEach((id, idx) => {
+    Object.keys(cart).forEach((id) => {
         const item = menuItems.find(m => m.id == id);
         const qty = cart[id];
         const sub = item.price * qty;
         total += sub;
-        text += `${idx + 1}. ${item.name} (${qty}x) = Rp ${sub.toLocaleString('id-ID')}\n`;
     });
-
-    text += `\n*Total:* Rp ${total.toLocaleString('id-ID')}\n`;
-    text += `----------------------------------\n`;
-    text += `*Nama:* ${name}\n`;
-    const typeLabel = type === 'Delivery' ? 'Delivery / Antar ke Rumah' : 'Takeaway / Ambil Sendiri';
-    text += `*Opsi Pesanan:* ${typeLabel}\n`;
-    if (type === 'Delivery') {
-        text += `*Alamat:* ${address}\n`;
-    }
-    if (note) text += `*Catatan:* ${note}\n`;
-    text += `*Metode Pembayaran:* ${paymentMethod === 'QRIS' ? 'QRIS - MENUNGGU VERIFIKASI' : 'COD - BAYAR DI TEMPAT'}\n`;
-    text += paymentMethod === 'QRIS'
-        ? `*Bukti pembayaran:* Sudah dikirim ke sistem untuk dicek admin.\n\nMohon tunggu verifikasi. Terima kasih!`
-        : `\nMohon konfirmasi pesanan COD ini. Terima kasih!`;
 
     if (paymentMethod === 'QRIS' && !supabaseClient) {
         showInlineAlert('Database belum terhubung, sehingga bukti transfer belum dapat dikirim.');
@@ -977,7 +1028,7 @@ async function sendOrderToWhatsApp() {
         address: type === 'Delivery' ? address : null,
         note: note || null,
         total_amount: total,
-        whatsapp_sent_at: new Date().toISOString()
+        whatsapp_sent_at: null
     }, orderItems);
 
     if (!saved) {
@@ -985,7 +1036,35 @@ async function sendOrderToWhatsApp() {
         return;
     }
 
-    window.open(`https://wa.me/${NOMOR_WA_UMKM}?text=${encodeURIComponent(text)}`, '_blank');
+    const orderedProducts = orderItems.map((item) => item.product_name);
+    const purchasedProducts = JSON.parse(localStorage.getItem(PURCHASED_PRODUCTS_KEY)) || [];
+    localStorage.setItem(PURCHASED_PRODUCTS_KEY, JSON.stringify([
+        ...new Set([...purchasedProducts, ...orderedProducts])
+    ]));
+    cart = {};
+    pendingOrder = null;
+    qrisPaymentConfirmed = false;
+    qrisPaymentProofFile = null;
+    saveAndRefreshCart();
+    showOrderReviewModal(orderedProducts);
+}
+
+function showOrderReviewModal(products) {
+    const modal = document.getElementById('reviewOrderModal');
+    if (!modal) return;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeOrderReviewModal() {
+    const modal = document.getElementById('reviewOrderModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+function goToOrderReview() {
+    window.location.href = 'review.html';
 }
 
 // BUKA PETUNJUK ARAH DI GOOGLE MAPS DARI LOKASI PENGGUNA
@@ -1337,7 +1416,7 @@ async function loadAdminDatabaseData() {
 
     const [dashboardResult, ordersResult] = await Promise.all([
         supabaseClient.from('admin_dashboard').select('*').single(),
-        supabaseClient.from('sales_orders').select('id, created_at, customer_name, order_type, status, payment_method, payment_status, payment_proof_url, total_amount').order('created_at', { ascending: false }).limit(10)
+        supabaseClient.from('sales_orders').select('id, created_at, customer_name, order_type, address, status, payment_method, payment_status, payment_proof_url, total_amount').order('created_at', { ascending: false }).limit(10)
     ]);
 
     if (dashboardResult.error || ordersResult.error) {
@@ -1354,7 +1433,7 @@ async function loadAdminDatabaseData() {
 
     ordersList.innerHTML = '';
     if (!ordersResult.data.length) {
-        ordersList.innerHTML = '<tr><td colspan="7">Belum ada pesanan di database.</td></tr>';
+        ordersList.innerHTML = '<tr><td colspan="8">Belum ada pesanan di database.</td></tr>';
         return;
     }
 
@@ -1364,6 +1443,7 @@ async function loadAdminDatabaseData() {
             new Date(order.created_at).toLocaleString('id-ID'),
             order.customer_name,
             order.order_type,
+            order.address || '-',
             order.status,
             order.payment_status === 'paid' ? 'Sudah masuk' : order.payment_method === 'QRIS' ? 'Menunggu verifikasi' : 'COD',
             `Rp ${Number(order.total_amount || 0).toLocaleString('id-ID')}`
@@ -1547,6 +1627,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     setupMenuSearch();
+    syncRatings();
     renderMenu(menuItems);
     const menuSearchInput = document.getElementById('menuSearchInput');
     if (menuSearchInput && menuSearchInput.value) filterMenuBySearch(menuSearchInput.value);
@@ -1596,55 +1677,254 @@ document.addEventListener("DOMContentLoaded", () => {
     setupGalleryPage();
 });
 
+// GALLERY MENU
+// Foto diambil dari menuItems supaya gallery selalu sama dengan menu yang dijual.
+// Menu "segera hadir" tidak ditampilkan. Ganti foto lewat array images di menuItems.
 function setupGalleryPage() {
-    const galleryGrid = document.querySelector('.gallery-grid');
-    if (!galleryGrid) return;
+    const list = document.getElementById('galeriList');
+    const lightbox = document.getElementById('galeriLightbox');
+    if (!list || !lightbox) return;
 
-    const items = galleryGrid.querySelectorAll('.gallery-item');
-    const filters = document.querySelectorAll('[data-gallery-filter]');
-    const lightbox = document.getElementById('galleryLightbox');
-    const lightboxImage = document.getElementById('galleryLightboxImage');
-    const lightboxCaption = document.getElementById('galleryLightboxCaption');
+    const countLabel = document.getElementById('galeriCount');
+    const emptyState = document.getElementById('galeriEmpty');
+    const emptyText = document.getElementById('galeriEmptyText');
+    const orderButton = document.getElementById('galeriOrderButton');
+    const chips = document.querySelectorAll('[data-galeri-menu]');
+    const lbImage = document.getElementById('galeriLbImage');
+    const lbCaption = document.getElementById('galeriLbCaption');
+    const lbClose = lightbox.querySelector('.galeri-lb-close');
+    const lbPrev = lightbox.querySelector('.galeri-lb-prev');
+    const lbNext = lightbox.querySelector('.galeri-lb-next');
 
-    filters.forEach((filter) => {
-        filter.addEventListener('click', () => {
-            const category = filter.dataset.galleryFilter;
-            filters.forEach((button) => button.classList.toggle('is-active', button === filter));
-            items.forEach((item) => {
-                item.hidden = category !== 'all' && item.dataset.galleryCategory !== category;
-            });
+    let activeMenu = '1';
+    let openPhotos = [];
+    let openIndex = 0;
+    let lastTrigger = null;
+    let loadToken = 0;
+
+    const available = menuItems.filter((item) => (
+        !item.comingSoon && Array.isArray(item.images) && item.images.length > 0
+    ));
+
+    function updateSetCount(set) {
+        const total = set.querySelectorAll('.galeri-photo').length;
+        set.dataset.count = total > 3 ? 'many' : String(total);
+    }
+
+    function refresh() {
+        const sets = Array.from(list.querySelectorAll('.galeri-set'));
+        let visibleSets = 0;
+        let visiblePhotos = 0;
+
+        sets.forEach((set) => {
+            const show = activeMenu === 'semua' || set.dataset.menuId === activeMenu;
+            set.hidden = !show;
+            if (show) {
+                visibleSets += 1;
+                visiblePhotos += set.querySelectorAll('.galeri-photo').length;
+            }
+        });
+
+        countLabel.textContent = visiblePhotos ? `${visiblePhotos} foto menu ditampilkan` : '';
+        if (orderButton) {
+            const selectedItem = available.find((item) => String(item.id) === activeMenu);
+            orderButton.href = selectedItem
+                ? `menu.html?search=${encodeURIComponent(selectedItem.name)}`
+                : 'menu.html';
+            orderButton.setAttribute('aria-label', selectedItem ? `Pesan ${selectedItem.name}` : 'Buka halaman pesanan');
+        }
+        emptyState.hidden = visibleSets > 0;
+        if (visibleSets === 0) {
+            emptyText.textContent = sets.length === 0 && activeMenu === 'semua'
+                ? 'Foto akan tampil di sini setelah menu ditambahkan.'
+                : 'Belum ada foto untuk menu ini.';
+        }
+    }
+
+    function buildPhoto(item, set, src, photoIndex, isFirstOnPage) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'galeri-photo';
+        button.setAttribute('aria-haspopup', 'dialog');
+
+        const img = new Image();
+        img.alt = `${item.name}, foto ${photoIndex + 1}`;
+        img.decoding = 'async';
+        img.loading = 'eager';
+        img.fetchPriority = isFirstOnPage ? 'high' : 'auto';
+
+        img.addEventListener('load', () => img.classList.add('is-loaded'));
+        img.addEventListener('error', () => {
+            if (img.dataset.fallbackUsed === 'true') return;
+            img.dataset.fallbackUsed = 'true';
+            img.src = item.images[0];
+        });
+
+        img.src = src;
+        if (img.complete && img.naturalWidth > 0) img.classList.add('is-loaded');
+
+        button.appendChild(img);
+        return button;
+    }
+
+    function buildSet(item, index) {
+        const set = document.createElement('section');
+        set.className = index % 2 === 1 ? 'galeri-set is-flipped' : 'galeri-set';
+        set.dataset.category = item.category;
+        set.dataset.menuId = String(item.id);
+
+        const headingId = `galeriNama${item.id}`;
+        set.setAttribute('aria-labelledby', headingId);
+
+        const head = document.createElement('div');
+        head.className = 'galeri-set-head';
+
+        const titleWrap = document.createElement('div');
+        const title = document.createElement('h2');
+        title.id = headingId;
+        title.textContent = item.name;
+        const meta = document.createElement('p');
+        meta.className = 'galeri-set-meta';
+        meta.textContent = item.category.charAt(0).toUpperCase() + item.category.slice(1);
+        titleWrap.append(title, meta);
+
+        const side = document.createElement('div');
+        side.className = 'galeri-set-side';
+        if (item.price > 0) {
+            const price = document.createElement('span');
+            price.className = 'galeri-price';
+            price.textContent = `Rp ${item.price.toLocaleString('id-ID')}`;
+            side.appendChild(price);
+        }
+        const order = document.createElement('a');
+        order.className = 'galeri-order';
+        order.href = `menu.html?search=${encodeURIComponent(item.name)}`;
+        order.textContent = 'Pesan';
+        order.setAttribute('aria-label', `Pesan ${item.name}`);
+        side.appendChild(order);
+
+        head.append(titleWrap, side);
+
+        const photos = document.createElement('div');
+        photos.className = 'galeri-photos';
+        item.images.slice(0, 4).forEach((src, photoIndex) => {
+            photos.appendChild(buildPhoto(item, set, src, photoIndex, index === 0 && photoIndex === 0));
+        });
+
+        set.append(head, photos);
+        updateSetCount(set);
+        return set;
+    }
+
+    available.forEach((item, index) => list.appendChild(buildSet(item, index)));
+
+    chips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+            activeMenu = chip.dataset.galeriMenu;
+            chips.forEach((other) => other.setAttribute('aria-pressed', String(other === chip)));
+            refresh();
         });
     });
 
-    const closeLightbox = () => {
-        if (!lightbox) return;
-        lightbox.classList.remove('is-open');
-        lightbox.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('review-popup-open');
-    };
+    refresh();
 
-    items.forEach((item) => {
-        const image = item.querySelector('img');
-        const viewButton = item.querySelector('.gallery-view-button');
-        if (!image || !viewButton || !lightbox || !lightboxImage || !lightboxCaption) return;
+    // ---- Lightbox ----
+    function fullSize(src) {
+        return src.replace(/([?&])w=\d+/, '$1w=1600');
+    }
 
-        viewButton.addEventListener('click', () => {
-            lightboxImage.src = image.currentSrc || image.src;
-            lightboxImage.alt = image.alt;
-            lightboxCaption.textContent = item.querySelector('h3')?.textContent || image.alt;
-            lightbox.classList.add('is-open');
-            lightbox.setAttribute('aria-hidden', 'false');
-            document.body.classList.add('review-popup-open');
-        });
+    function showPhoto(index) {
+        openIndex = (index + openPhotos.length) % openPhotos.length;
+        const button = openPhotos[openIndex];
+        const img = button.querySelector('img');
+        const small = img.currentSrc || img.src;
+        const large = fullSize(small);
+        const token = ++loadToken;
+
+        lbImage.src = small;
+        lbImage.alt = img.alt;
+        lbCaption.textContent = button.closest('.galeri-set').querySelector('h2').textContent;
+
+        // Tampilkan foto kecil dulu (sudah ada di cache), lalu ganti dengan versi tajam.
+        if (large !== small) {
+            const loader = new Image();
+            loader.onload = () => {
+                if (token === loadToken) lbImage.src = large;
+            };
+            loader.src = large;
+        }
+    }
+
+    function openLightbox(button) {
+        openPhotos = Array.from(list.querySelectorAll('.galeri-set:not([hidden]) .galeri-photo'));
+        openIndex = openPhotos.indexOf(button);
+        lastTrigger = button;
+        lbPrev.hidden = openPhotos.length < 2;
+        lbNext.hidden = openPhotos.length < 2;
+        lightbox.hidden = false;
+        document.body.classList.add('galeri-lock');
+        showPhoto(openIndex);
+        lbClose.focus();
+    }
+
+    function closeLightbox() {
+        if (lightbox.hidden) return;
+        lightbox.hidden = true;
+        document.body.classList.remove('galeri-lock');
+        loadToken += 1;
+        lbImage.removeAttribute('src');
+        if (lastTrigger && document.body.contains(lastTrigger)) lastTrigger.focus();
+    }
+
+    list.addEventListener('click', (event) => {
+        const button = event.target.closest('.galeri-photo');
+        if (button) openLightbox(button);
     });
 
-    document.querySelector('.gallery-lightbox-close')?.addEventListener('click', closeLightbox);
-    lightbox?.addEventListener('click', (event) => {
+    lbClose.addEventListener('click', closeLightbox);
+    lbPrev.addEventListener('click', () => showPhoto(openIndex - 1));
+    lbNext.addEventListener('click', () => showPhoto(openIndex + 1));
+    lightbox.addEventListener('click', (event) => {
         if (event.target === lightbox) closeLightbox();
     });
+
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') closeLightbox();
+        if (lightbox.hidden) return;
+        if (event.key === 'Escape') {
+            closeLightbox();
+        } else if (event.key === 'ArrowLeft' && openPhotos.length > 1) {
+            showPhoto(openIndex - 1);
+        } else if (event.key === 'ArrowRight' && openPhotos.length > 1) {
+            showPhoto(openIndex + 1);
+        } else if (event.key === 'Tab') {
+            const focusable = [lbClose, lbPrev, lbNext].filter((button) => !button.hidden);
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (!focusable.includes(document.activeElement)) {
+                event.preventDefault();
+                first.focus();
+            } else if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
     });
+
+    let touchStartX = null;
+    lightbox.addEventListener('touchstart', (event) => {
+        touchStartX = event.changedTouches[0].clientX;
+    }, { passive: true });
+    lightbox.addEventListener('touchend', (event) => {
+        if (touchStartX === null) return;
+        const distance = event.changedTouches[0].clientX - touchStartX;
+        touchStartX = null;
+        if (Math.abs(distance) > 50 && openPhotos.length > 1) {
+            showPhoto(openIndex + (distance < 0 ? 1 : -1));
+        }
+    }, { passive: true });
 }
 
 function setupHamburgerNavigation() {
@@ -1685,17 +1965,6 @@ function setupHamburgerNavigation() {
         closeButton.setAttribute('title', 'Tutup menu utama');
         closeButton.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
         mobileNavPanel.appendChild(closeButton);
-
-        const profileWrap = document.createElement('div');
-        profileWrap.className = 'nav-hamburger-profile';
-        profileWrap.innerHTML = `
-            <div class="nav-hamburger-avatar">P</div>
-            <div class="nav-hamburger-profile-meta">
-                <span>Profile</span>
-                <strong>Penagisa User</strong>
-            </div>
-        `;
-        mobileNavPanel.appendChild(profileWrap);
 
         const pages = [
             { text: 'Home', href: 'index.html' },

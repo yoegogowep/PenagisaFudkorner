@@ -156,6 +156,23 @@
         </div>
     </div>
 
+    <div class="review-order-modal" id="reviewOrderModal" aria-hidden="true">
+        <div class="review-order-modal-backdrop" onclick="closeOrderReviewModal()"></div>
+        <div class="review-confetti" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="review-order-modal-content" role="dialog" aria-modal="true" aria-labelledby="reviewOrderTitle">
+            <button class="review-order-modal-close" type="button" onclick="closeOrderReviewModal()" aria-label="Tutup ajakan review"><i class="fa-solid fa-xmark"></i></button>
+            <div class="review-order-icon"><i class="fa-solid fa-check"></i></div>
+            <span class="payment-modal-kicker">Pesanan berhasil</span>
+            <h3 id="reviewOrderTitle">Terima kasih telah melakukan pesanan!</h3>
+            <p>Tambahkan review untuk membantu kami memberikan pelayanan yang lebih baik.</p>
+            <button class="wa-submit-btn" type="button" onclick="goToOrderReview()"><i class="fa-solid fa-pen"></i> Tulis Review</button>
+        </div>
+    </div>
+
     <div id="productModal" class="product-modal">
         <div class="product-modal-backdrop" onclick="closeProductModal()"></div>
         <div class="product-modal-content">

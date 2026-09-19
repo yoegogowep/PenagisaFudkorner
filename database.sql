@@ -41,6 +41,7 @@ alter table public.sales_orders add column if not exists payment_method text not
 alter table public.sales_orders add column if not exists payment_status text not null default 'pending';
 alter table public.sales_orders add column if not exists payment_confirmed_at timestamptz;
 alter table public.sales_orders add column if not exists payment_proof_url text;
+alter table public.sales_orders add column if not exists address text;
 
 create table if not exists public.sales_order_items (
     id uuid primary key default gen_random_uuid(),
