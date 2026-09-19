@@ -129,11 +129,30 @@
             <button class="payment-modal-close" type="button" onclick="closeQrisPaymentModal()" aria-label="Tutup QRIS"><i class="fa-solid fa-xmark"></i></button>
             <span class="payment-modal-kicker">Pembayaran QRIS</span>
             <h3 id="qrisPaymentTitle">Scan QR untuk membayar</h3>
-            <p>Setelah pembayaran berhasil, tekan tombol di bawah untuk melanjutkan ke WhatsApp.</p>
-            <img class="qris-payment-image" src="qris.png" alt="QRIS Penagisa Food Corner">
-            <button class="wa-submit-btn" type="button" onclick="confirmQrisPayment()">
-                <i class="fa-solid fa-circle-check"></i> Pembayaran telah berhasil
-            </button>
+            <div id="qrisStepScan">
+                <p>Scan QRIS, selesaikan pembayaran, lalu lanjutkan untuk mengunggah bukti transfer.</p>
+                <img class="qris-payment-image" src="qris.png" alt="QRIS Penagisa Food Corner">
+                <div class="payment-modal-actions payment-modal-actions-end">
+                    <button class="wa-submit-btn payment-next-btn" type="button" onclick="nextQrisPaymentStep()">
+                        Lanjut <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="qrisStepProof" hidden>
+                <p>Unggah foto bukti transfer agar pesanan dapat diperiksa admin secara manual.</p>
+                <label class="payment-proof-upload">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span id="paymentProofFileName">Pilih foto bukti transfer</span>
+                    <input id="paymentProofInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="handlePaymentProofSelected(event)">
+                </label>
+                <p class="payment-proof-hint">JPG, PNG, atau WEBP. Maksimal 5 MB.</p>
+                <div class="payment-modal-actions">
+                    <button class="payment-secondary-btn" type="button" onclick="previousQrisPaymentStep()"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+                    <button class="wa-submit-btn payment-next-btn" type="button" onclick="confirmQrisPayment()">
+                        Kirim bukti <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

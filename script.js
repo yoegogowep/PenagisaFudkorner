@@ -96,6 +96,7 @@ async function saveOrderToDatabase(order, items) {
     const { data, error } = await supabaseClient.from('sales_orders').insert(order).select('id').single();
     if (error || !data) {
         console.error('Pesanan gagal disimpan ke database:', error);
+        if (error) showAdminToast('Database', `Pesanan gagal disimpan: ${error.message}`);
         return false;
     }
     const { error: itemError } = await supabaseClient.from('sales_order_items').insert(
@@ -259,6 +260,7 @@ let cart = JSON.parse(localStorage.getItem('umkm_cart')) || {};
 let cartDimTimer;
 let pendingOrder = null;
 let qrisPaymentConfirmed = false;
+let qrisPaymentProofFile = null;
 
 function refreshCartActivity() {
     clearTimeout(cartDimTimer);
@@ -819,6 +821,8 @@ function handlePaymentMethodChange() {
 
     if (paymentMethod === 'QRIS') {
         qrisPaymentConfirmed = false;
+        qrisPaymentProofFile = null;
+        resetQrisPaymentModal();
         const modal = document.getElementById('qrisPaymentModal');
         if (modal) {
             modal.classList.add('active');
@@ -837,10 +841,48 @@ function closeQrisPaymentModal() {
     modal.setAttribute('aria-hidden', 'true');
 }
 
+function resetQrisPaymentModal() {
+    document.getElementById('qrisStepScan')?.removeAttribute('hidden');
+    document.getElementById('qrisStepProof')?.setAttribute('hidden', '');
+    const input = document.getElementById('paymentProofInput');
+    const fileName = document.getElementById('paymentProofFileName');
+    if (input) input.value = '';
+    if (fileName) fileName.textContent = 'Pilih foto bukti transfer';
+}
+
+function nextQrisPaymentStep() {
+    document.getElementById('qrisStepScan')?.setAttribute('hidden', '');
+    document.getElementById('qrisStepProof')?.removeAttribute('hidden');
+}
+
+function previousQrisPaymentStep() {
+    document.getElementById('qrisStepProof')?.setAttribute('hidden', '');
+    document.getElementById('qrisStepScan')?.removeAttribute('hidden');
+}
+
+function handlePaymentProofSelected(event) {
+    const file = event.target.files?.[0];
+    const fileName = document.getElementById('paymentProofFileName');
+    if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
+        event.target.value = '';
+        qrisPaymentProofFile = null;
+        showInlineAlert('Pilih foto JPG, PNG, atau WEBP dengan ukuran maksimal 5 MB.');
+        return;
+    }
+    qrisPaymentProofFile = file;
+    if (fileName) fileName.textContent = file.name;
+}
+
 function confirmQrisPayment() {
+    if (!qrisPaymentProofFile) {
+        showInlineAlert('Pilih foto bukti transfer terlebih dahulu.');
+        return;
+    }
     qrisPaymentConfirmed = true;
     closeQrisPaymentModal();
-    showInlineAlert('Pembayaran telah berhasil. Silakan konfirmasi ke WhatsApp.', 4000);
+    showInlineAlert('Bukti transfer siap dikirim. Silakan konfirmasi pesanan ke WhatsApp.', 4000);
     setOrderActionButton('Konfirmasi ke WhatsApp', true);
 }
 
@@ -863,7 +905,7 @@ async function sendOrderToWhatsApp() {
             modal.classList.add('active');
             modal.setAttribute('aria-hidden', 'false');
         }
-        showInlineAlert('Selesaikan pembayaran QRIS terlebih dahulu.');
+        showInlineAlert('Selesaikan pembayaran QRIS dan unggah bukti transfer terlebih dahulu.');
         return;
     }
 
@@ -900,17 +942,40 @@ async function sendOrderToWhatsApp() {
         text += `*Alamat:* ${address}\n`;
     }
     if (note) text += `*Catatan:* ${note}\n`;
-    text += `*Metode Pembayaran:* ${paymentMethod === 'QRIS' ? 'QRIS - SUDAH BAYAR' : 'COD - BAYAR DI TEMPAT'}\n`;
+    text += `*Metode Pembayaran:* ${paymentMethod === 'QRIS' ? 'QRIS - MENUNGGU VERIFIKASI' : 'COD - BAYAR DI TEMPAT'}\n`;
     text += paymentMethod === 'QRIS'
-        ? `*Bukti pembayaran:* Akan dikirim melalui WhatsApp.\n\nMohon cek bukti transfer. Terima kasih!`
+        ? `*Bukti pembayaran:* Sudah dikirim ke sistem untuk dicek admin.\n\nMohon tunggu verifikasi. Terima kasih!`
         : `\nMohon konfirmasi pesanan COD ini. Terima kasih!`;
+
+    if (paymentMethod === 'QRIS' && !supabaseClient) {
+        showInlineAlert('Database belum terhubung, sehingga bukti transfer belum dapat dikirim.');
+        return;
+    }
+
+    let paymentProofUrl = null;
+    if (paymentMethod === 'QRIS') {
+        const proofName = qrisPaymentProofFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const proofPath = `pending/${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}-${proofName}`;
+        const { error: uploadError } = await supabaseClient.storage.from('payment-proofs').upload(proofPath, qrisPaymentProofFile, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: qrisPaymentProofFile.type
+        });
+        if (uploadError) {
+            console.error('Bukti transfer gagal diunggah:', uploadError);
+            showInlineAlert('Bukti transfer gagal diunggah. Pastikan bucket payment-proofs sudah dibuat.');
+            return;
+        }
+        paymentProofUrl = supabaseClient.storage.from('payment-proofs').getPublicUrl(proofPath).data.publicUrl;
+    }
 
     const saved = await saveOrderToDatabase({
         customer_name: name,
         order_type: type,
         payment_method: paymentMethod,
-        payment_status: paymentMethod === 'QRIS' ? 'paid' : 'cod_confirmed',
-        payment_confirmed_at: new Date().toISOString(),
+        payment_status: paymentMethod === 'QRIS' ? 'awaiting_verification' : 'cod_confirmed',
+        payment_confirmed_at: paymentMethod === 'QRIS' ? null : new Date().toISOString(),
+        payment_proof_url: paymentProofUrl,
         address: type === 'Delivery' ? address : null,
         note: note || null,
         total_amount: total,
@@ -1274,7 +1339,7 @@ async function loadAdminDatabaseData() {
 
     const [dashboardResult, ordersResult] = await Promise.all([
         supabaseClient.from('admin_dashboard').select('*').single(),
-        supabaseClient.from('sales_orders').select('created_at, customer_name, order_type, status, total_amount').order('created_at', { ascending: false }).limit(10)
+        supabaseClient.from('sales_orders').select('id, created_at, customer_name, order_type, status, payment_method, payment_status, payment_proof_url, total_amount').order('created_at', { ascending: false }).limit(10)
     ]);
 
     if (dashboardResult.error || ordersResult.error) {
@@ -1291,7 +1356,7 @@ async function loadAdminDatabaseData() {
 
     ordersList.innerHTML = '';
     if (!ordersResult.data.length) {
-        ordersList.innerHTML = '<tr><td colspan="5">Belum ada pesanan di database.</td></tr>';
+        ordersList.innerHTML = '<tr><td colspan="7">Belum ada pesanan di database.</td></tr>';
         return;
     }
 
@@ -1302,14 +1367,50 @@ async function loadAdminDatabaseData() {
             order.customer_name,
             order.order_type,
             order.status,
+            order.payment_status === 'paid' ? 'Sudah masuk' : order.payment_method === 'QRIS' ? 'Menunggu verifikasi' : 'COD',
             `Rp ${Number(order.total_amount || 0).toLocaleString('id-ID')}`
         ].forEach(value => {
             const cell = document.createElement('td');
             cell.textContent = value;
             row.appendChild(cell);
         });
+        const actionCell = document.createElement('td');
+        if (order.payment_proof_url) {
+            const proofLink = document.createElement('a');
+            proofLink.href = order.payment_proof_url;
+            proofLink.target = '_blank';
+            proofLink.rel = 'noopener';
+            proofLink.className = 'admin-proof-link';
+            proofLink.innerHTML = '<i class="fa-solid fa-image"></i> Lihat bukti';
+            actionCell.appendChild(proofLink);
+        }
+        if (order.payment_method === 'QRIS' && order.payment_status !== 'paid') {
+            const verifyButton = document.createElement('button');
+            verifyButton.type = 'button';
+            verifyButton.className = 'admin-payment-confirm-btn';
+            verifyButton.innerHTML = '<i class="fa-solid fa-check"></i> Sudah masuk';
+            verifyButton.addEventListener('click', () => verifyPaymentOrder(order.id));
+            actionCell.appendChild(verifyButton);
+        }
+        row.appendChild(actionCell);
         ordersList.appendChild(row);
     });
+}
+
+async function verifyPaymentOrder(orderId) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.from('sales_orders').update({
+        payment_status: 'paid',
+        payment_confirmed_at: new Date().toISOString(),
+        status: 'confirmed'
+    }).eq('id', orderId);
+    if (error) {
+        console.error('Status pembayaran gagal diperbarui:', error);
+        showAdminToast('Database', `Verifikasi gagal: ${error.message}`);
+        return;
+    }
+    showAdminToast('Berhasil', 'Dana ditandai sudah masuk.');
+    await loadAdminDatabaseData();
 }
 
 function adminResetCart() {
