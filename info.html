@@ -6,7 +6,11 @@
     <link rel="icon" type="image/png" href="logo-penagisa.png?v=4">
     <title>Informasi - Penagisa Food Corner</title>
     <script>
-        if (localStorage.getItem('umkm_theme') === 'dark') {
+        const savedTheme = localStorage.getItem('umkm_theme');
+        if (!savedTheme) {
+            localStorage.setItem('umkm_theme', 'dark');
+            document.documentElement.dataset.theme = 'dark';
+        } else if (savedTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
         }
     </script>
@@ -43,21 +47,20 @@
                 <a href="review.html" class="nav-link">Review</a>
                 <a href="kontak.html" class="nav-link">Kontak</a>
             </nav>
-            <button class="cart-icon-btn" id="floatingCart" type="button" aria-label="Lihat pesanan" title="Lihat pesanan">
-                <i class="fa-solid fa-basket-shopping"></i>
-                <span class="cart-badge" id="nav-cart-count">0</span>
-            </button>
         </div>
     </header>
 
     <div class="page-container">
-        <!-- Hero Banner -->
         <div class="hero-banner">
+            <span class="hero-banner-badge">UMKM lokal • Buka untuk semua</span>
             <h2>Kenalan Dulu Yuk!</h2>
             <p>Penagisa Food Corner adalah bazar makanan dan minuman yang hadir dari semangat siswa SMK Maarif NU 01 Limpung. Pilihannya sederhana, enak, dan cocok buat dinikmati sambil nongkrong di acara sekolah.</p>
+            <div class="hero-banner-actions">
+                <a href="menu.html" class="info-cta primary">Lihat menu</a>
+                <a href="alamat.html" class="info-cta secondary">Lihat lokasi</a>
+            </div>
         </div>
 
-        <!-- Statistik -->
         <div class="grid-3">
             <a href="review.html" class="stat-box stat-link" aria-label="Lihat review pelanggan">
                 <i class="fa-solid fa-face-smile"></i>
@@ -76,25 +79,27 @@
             </a>
         </div>
 
-        <!-- Keunggulan Grid -->
         <h2 style="font-size:18px; margin-bottom:15px;">Kenapa Bazar Ini Istimewa?</h2>
-        <div class="grid-2">
+        <div class="info-highlight-grid">
             <div class="info-card">
                 <h3><i class="fa-solid fa-shield-halal"></i> Rasa yang Familiar</h3>
                 <p>Menu yang kami sajikan sederhana, nikmat, dan cocok dengan selera umum siswa maupun pengunjung bazar. Enaknya bikin nagih.</p>
             </div>
             <div class="info-card">
                 <h3><i class="fa-solid fa-leaf"></i> Bahan Pilihan</h3>
-                <p>Kami pilih bahan yang masih segar dan dibuat dengan proses yang bersih. </p>
+                <p>Kami pilih bahan yang masih segar dan dibuat dengan proses yang bersih, sehingga rasa tetap terjaga.</p>
             </div>
-            
             <div class="info-card">
                 <h3><i class="fa-solid fa-hand-holding-dollar"></i> Harga Murah untuk Semua</h3>
-                <p>Harga disini sangat terjangkau supaya masyarakat bisa menikmati tanpa takut terlalu mahal. Bazar yang enak, dan tetap ramah di kantong.</p>
+                <p>Harga disini sangat terjangkau supaya masyarakat bisa menikmati tanpa takut terlalu mahal. Praktis, enak, dan ramah di kantong.</p>
+            </div>
+            <div class="info-card">
+                <h3><i class="fa-solid fa-clock"></i> Cepat dan Nyaman</h3>
+                <p>Proses pemesanan dibuat ringkas, cocok untuk pelanggan yang ingin menikmati menu favorit tanpa ribet.</p>
             </div>
         </div>
+    </div>
 
-        
     <!-- MODAL POPUP KERANJANG -->
     <div class="modal-overlay" id="cartModal">
         <div class="modal-content">

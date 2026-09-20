@@ -6,7 +6,11 @@
     <link rel="icon" type="image/png" href="logo-penagisa.png?v=4">
     <title>Lokasi - Penagisa Food Corner</title>
     <script>
-        if (localStorage.getItem('umkm_theme') === 'dark') {
+        const savedTheme = localStorage.getItem('umkm_theme');
+        if (!savedTheme) {
+            localStorage.setItem('umkm_theme', 'dark');
+            document.documentElement.dataset.theme = 'dark';
+        } else if (savedTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
         }
     </script>
@@ -43,94 +47,95 @@
                 <a href="review.html" class="nav-link">Review</a>
                 <a href="kontak.html" class="nav-link">Kontak</a>
             </nav>
-            <button class="cart-icon-btn" id="floatingCart" type="button" aria-label="Lihat pesanan" title="Lihat pesanan">
-                <i class="fa-solid fa-basket-shopping"></i>
-                <span class="cart-badge" id="nav-cart-count">0</span>
-            </button>
         </div>
     </header>
 
     <div class="page-container">
-        <div class="status-badge">
-            <span class="status-dot"></span> Buka Sekarang (09:00 - 21:00 WIB)
+        <div class="page-header-wrap">
+            <div class="status-badge">
+                <span class="status-dot"></span> Buka sekarang (09:00 - 21:00 WIB)
+            </div>
+            <h1 class="page-title">Lokasi & Operasional</h1>
+            <p class="page-subtitle">Kunjungi outlet kami langsung atau pesan antar ke lokasi Anda dengan rute yang lebih jelas.</p>
         </div>
 
-        <h1 class="page-title">Lokasi & Operasional</h1>
-        <p class="page-subtitle">Kunjungi outlet kami langsung atau pesan antar ke lokasi Anda.</p>
-
-        <!-- Peta Google Embed + Tombol Petunjuk Arah -->
-        <div class="map-container">
-            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1177.3063954657696!2d109.91997477796625!3d-7.012704030981963!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e70153aaf18df7f%3A0xa5a47313ff22cdb7!2sSMK%20Ma'arif%20NU%2001%20Limpung!5e0!3m2!1sid!2sid!4v1788932211669!5m2!1sid!2sid" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-            <div style="margin-top:12px; max-width:600px; display:flex; gap:8px; align-items:center;">
-                <div style="flex:1; display:flex; gap:8px;">
-                    <input id="originAddressInput" type="text" placeholder="Masukkan alamat Anda (opsional)" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--border);">
-                    <button class="contact-card-btn" id="directionsFromAddressBtn" onclick="openDirectionsFromInput(-7.012704030981963, 109.91997477796625)">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="contact-icon" style="background:#2ecc71;"><i class="fa-solid fa-paper-plane"></i></div>
-                            <div>
-                                <div style="font-weight:700; font-size:13px;">Rute dari Alamat Saya</div>
-                                <div style="font-size:11px; color:var(--text-muted);">Gunakan alamat yang Anda masukkan</div>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
-                    </button>
-                </div>
-                <button class="contact-card-btn" id="directionsBtn" onclick="openDirectionsTo(-7.012704030981963, 109.91997477796625)">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div class="contact-icon" style="background:#2ecc71;"><i class="fa-solid fa-location-crosshairs"></i></div>
-                        <div>
-                            <div style="font-weight:700; font-size:13px;">Tampilkan Rute Dari Lokasiku</div>
-                            <div style="font-size:11px; color:var(--text-muted);">Izinkan lokasi untuk menampilkan arah</div>
-                        </div>
+        <div class="info-card">
+            <div class="grid-2">
+                <div>
+                    <div class="map-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1177.3063954657696!2d109.91997477796625!3d-7.012704030981963!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e70153aaf18df7f%3A0xa5a47313ff22cdb7!2sSMK%20Ma'arif%20NU%2001%20Limpung!5e0!3m2!1sid!2sid!4v1788932211669!5m2!1sid!2sid" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
                     </div>
-                    <i class="fa-solid fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
-                </button>
+                    <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px;">
+                        <input id="originAddressInput" type="text" placeholder="Masukkan alamat Anda (opsional)" style="flex:1; min-width:180px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-light); color:var(--text-dark);">
+                        <button class="contact-card-btn" id="directionsFromAddressBtn" onclick="openDirectionsFromInput(-7.012704030981963, 109.91997477796625)">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="contact-icon" style="background:#2ecc71;"><i class="fa-solid fa-paper-plane"></i></div>
+                                <div>
+                                    <div style="font-weight:700; font-size:13px;">Rute dari Alamat Saya</div>
+                                    <div style="font-size:11px; color:var(--text-muted);">Gunakan alamat yang Anda masukkan</div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3><i class="fa-solid fa-location-dot"></i> Alamat Stand</h3>
+                    <p><b>Bazar XII PG</b></p>
+                    <p>Jl. KH. Wahid Hasyim No.1, Limpung, Kec. Limpung, Kabupaten Batang, Jawa Tengah 51271</p>
+                    <p style="margin-top:12px; font-size:12px; color:var(--primary); font-weight:700;"><i class="fa-solid fa-compass"></i> Patokan: Berada di NUSA SPORT CENTER</p>
+
+                    <div class="contact-stack">
+                        <a href="https://maps.app.goo.gl/zvHuta6wiYSS6ce6A" target="_blank" class="contact-card-btn">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="contact-icon" style="background:var(--primary);"><i class="fa-solid fa-map-location-dot"></i></div>
+                                <div>
+                                    <div style="font-weight:700; font-size:13px;">Petunjuk Arah</div>
+                                    <div style="font-size:11px; color:var(--text-muted);">Buka di Google Maps</div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
+                        </a>
+
+                        <button class="contact-card-btn" id="directionsBtn" onclick="openDirectionsTo(-7.012704030981963, 109.91997477796625)" type="button">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="contact-icon" style="background:#2ecc71;"><i class="fa-solid fa-location-crosshairs"></i></div>
+                                <div>
+                                    <div style="font-weight:700; font-size:13px;">Tampilkan Rute Dari Lokasiku</div>
+                                    <div style="font-size:11px; color:var(--text-muted);">Izinkan lokasi untuk menampilkan arah</div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="grid-2">
-            <!-- Detail Alamat -->
-            <div class="info-card">
-                <h3><i class="fa-solid fa-location-dot"></i> Alamat Stand</h3>
-                <p><b>Bazar XII PG</b></p>
-                <p>Jl. KH. Wahid Hasyim No.1, Limpung, Kec. Limpung, Kabupaten Batang, Jawa Tengah 51271</p>
-                <p style="margin-top:12px; font-size:12px; color:var(--primary); font-weight:700;"><i class="fa-solid fa-compass"></i> Patokan: Berada di NUSA SPORT CENTER</p>
-                
-                <a href="https://maps.app.goo.gl/zvHuta6wiYSS6ce6A" target="_blank" class="contact-card-btn" style="margin-top:15px; margin-bottom:0;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div class="contact-icon" style="background:var(--primary);"><i class="fa-solid fa-map-location-dot"></i></div>
-                        <div>
-                            <div style="font-weight:700; font-size:13px;">Petunjuk Arah</div>
-                            <div style="font-size:11px; color:var(--text-muted);">Buka di Google Maps</div>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
-                </a>
-            </div>
-
-            <!-- Jam Buka & Jangkauan -->
             <div class="info-card">
                 <h3><i class="fa-solid fa-clock"></i> Jam Operasional</h3>
                 <p>• <b>HANYA BUKA HARI INI :</b> 07:00 - 12:00 WIB</p>
+                <p>• Siap melayani pesanan antar maupun pickup di area sekitar lokasi.</p>
+            </div>
 
-                <hr style="border:none; border-top:1px dashed var(--border); margin:15px 0;">
-
+            <div class="info-card">
                 <h3><i class="fa-solid fa-motorcycle"></i> Jangkauan Delivery</h3>
                 <p>Melayani pengiriman delivery area: <b>SMK MA'ARIF NU 01 LIMPUNG</b></p>
+                <p>• Pesanan bisa dibicarakan lebih lanjut via WhatsApp untuk area sekitar sekolah dan sekitarnya.</p>
             </div>
         </div>
     </div>
 
-    <!-- MODAL POPUP KERANJANG -->
     <div class="modal-overlay" id="cartModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Rincian Pesanan</h3>
                 <button onclick="closeCartModal()" style="border:none; background:none; cursor:pointer; font-size:18px;"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div id="cartItemsList">
+            <div id="cartItemsList"></div>
             <div style="background:var(--bg-light); padding:15px; border-radius:12px; margin:15px 0;">
-                <div id="cartFormContainer">
                 <div class="form-group">
                     <label>NAMA PEMESAN</label>
                     <input type="text" id="custName" placeholder="Contoh: Budi">
@@ -146,10 +151,9 @@
                     <label id="addressLabel">ALAMAT LENGKAP</label>
                     <textarea id="custAddress" rows="2" placeholder="Isi alamat rumah Anda"></textarea>
                 </div>
-            <button class="wa-submit-btn" onclick="sendOrderToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Pesan via WhatsApp</button>
             </div>
+            <button class="wa-submit-btn" onclick="sendOrderToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Pesan via WhatsApp</button>
         </div>
-    </div>
     </div>
 
     <footer class="site-footer">

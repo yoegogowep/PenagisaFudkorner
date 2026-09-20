@@ -6,7 +6,11 @@
     <link rel="icon" type="image/png" href="logo-penagisa.png?v=4">
     <title>Kontak - Stand XII GIM 1</title>
     <script>
-        if (localStorage.getItem('umkm_theme') === 'dark') {
+        const savedTheme = localStorage.getItem('umkm_theme');
+        if (!savedTheme) {
+            localStorage.setItem('umkm_theme', 'dark');
+            document.documentElement.dataset.theme = 'dark';
+        } else if (savedTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
         }
     </script>
@@ -44,53 +48,55 @@
                 <a href="review.html" class="nav-link">Review</a>
                 <a href="kontak.html" class="nav-link active">Kontak</a>
             </nav>
-            <button class="cart-icon-btn" id="floatingCart" type="button" aria-label="Lihat pesanan" title="Lihat pesanan">
-                <i class="fa-solid fa-basket-shopping"></i>
-                <span class="cart-badge" id="nav-cart-count">0</span>
-            </button>
         </div>
     </header>
 
     <div class="page-container">
-        <h1 class="page-title">Hubungi Kami</h1>
-        <p class="page-subtitle">Siap melayani pertanyaan, katering pesanan khusus, maupun masukan pelanggan.</p>
+        <div class="page-header-wrap">
+            <div class="status-badge">
+                <span class="status-dot"></span> Layanan pelanggan aktif
+            </div>
+            <h1 class="page-title">Hubungi Kami</h1>
+            <p class="page-subtitle">Siap melayani pertanyaan, katering pesanan khusus, maupun masukan pelanggan.</p>
+        </div>
 
-        <!-- Kartu Kontak Langsung -->
         <div class="grid-2">
             <div>
                 <h2 style="font-size:16px; margin-bottom:12px;">Kontak Cepat</h2>
-                <a href="https://wa.me/6282223346091" target="_blank" class="contact-card-btn">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="contact-icon" style="background:var(--primary);"><i class="fa-brands fa-whatsapp"></i></div>
-                        <div>
-                            <div style="font-weight:700; font-size:14px;">WhatsApp Customer Service</div>
-                            <div style="font-size:12px; color:var(--text-muted);">0822-2334-6091</div>
+                <div class="contact-stack">
+                    <a href="https://wa.me/6282223346091" target="_blank" class="contact-card-btn">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="contact-icon" style="background:var(--primary);"><i class="fa-brands fa-whatsapp"></i></div>
+                            <div>
+                                <div style="font-weight:700; font-size:14px;">WhatsApp Customer Service</div>
+                                <div style="font-size:12px; color:var(--text-muted);">0822-2334-6091</div>
+                            </div>
                         </div>
-                    </div>
-                    <i class="fa-solid fa-arrow-right-long" style="color:var(--text-muted);"></i>
-                </a>
+                        <i class="fa-solid fa-arrow-right-long" style="color:var(--text-muted);"></i>
+                    </a>
 
-                <a href="mailto:bazarpfcofficial@gmail.com" class="contact-card-btn">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="contact-icon" style="background:var(--primary);"><i class="fa-solid fa-envelope"></i></div>
-                        <div>
-                            <div style="font-weight:700; font-size:14px;">Email Resmi</div>
-                            <div style="font-size:12px; color:var(--text-muted);">bazarpfcofficial@gmail.com</div>
+                    <a href="mailto:bazarpfcofficial@gmail.com" class="contact-card-btn">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="contact-icon" style="background:var(--primary);"><i class="fa-solid fa-envelope"></i></div>
+                            <div>
+                                <div style="font-weight:700; font-size:14px;">Email Resmi</div>
+                                <div style="font-size:12px; color:var(--text-muted);">bazarpfcofficial@gmail.com</div>
+                            </div>
                         </div>
-                    </div>
-                    <i class="fa-solid fa-arrow-right-long" style="color:var(--text-muted);"></i>
-                </a>
+                        <i class="fa-solid fa-arrow-right-long" style="color:var(--text-muted);"></i>
+                    </a>
 
-                <a href="https://www.instagram.com/twelvegim.development?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw==" target="_blank" class="contact-card-btn">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="contact-icon" style="background:var(--primary);"><i class="fa-brands fa-instagram"></i></div>
-                        <div>
-                            <div style="font-weight:700; font-size:14px;">Instagram</div>
-                            <div style="font-size:12px; color:var(--text-muted);">@twelvegim.development</div>
+                    <a href="https://www.instagram.com/twelvegim.development?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw==" target="_blank" class="contact-card-btn">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="contact-icon" style="background:var(--primary);"><i class="fa-brands fa-instagram"></i></div>
+                            <div>
+                                <div style="font-weight:700; font-size:14px;">Instagram</div>
+                                <div style="font-size:12px; color:var(--text-muted);">@twelvegim.development</div>
+                            </div>
                         </div>
-                    </div>
-                    <i class="fa-solid fa-arrow-right-long" style="color:var(--text-muted);"></i>
-                </a>
+                        <i class="fa-solid fa-arrow-right-long" style="color:var(--text-muted);"></i>
+                    </a>
+                </div>
 
                 <div class="share-website-card">
                     <div class="share-website-heading">
@@ -111,24 +117,24 @@
             <div>
                 <!-- Form Pesan Singkat -->
                 <div class="info-card">
-                <h3><i class="fa-solid fa-paper-plane"></i> Kirim Pesan / Kritik & Saran</h3>
-                <form id="feedbackForm" onsubmit="sendFeedbackToWhatsApp(event)">
-                     <div class="feedback-form-fields">
-                    <div class="form-group">
-                        <label>NAMA</label>
-                            <input type="text" id="feedbackName" placeholder="Nama Anda" required>
-                    </div>
-                    <div class="form-group">
-                        <label>EMAIL / WA</label>
-                            <input type="text" id="feedbackContact" placeholder="Nomor kontak Anda" required>
-                    </div>
-                    <div class="form-group">
-                        <label>PESAN</label>
-                            <textarea id="feedbackMessage" rows="3" placeholder="Tuliskan saran atau pertanyaan katering..." required></textarea>
-                    </div>
-                    <button type="submit" style="width:100%; background:var(--primary); color:white; border:none; padding:10px; border-radius:20px; font-weight:700; cursor:pointer;">Kirim Pesan</button>
-                     </div>
-                </form>
+                    <h3><i class="fa-solid fa-paper-plane"></i> Kirim Pesan / Kritik & Saran</h3>
+                    <form id="feedbackForm" onsubmit="sendFeedbackToWhatsApp(event)">
+                        <div class="feedback-form-fields">
+                            <div class="form-group">
+                                <label>NAMA</label>
+                                <input type="text" id="feedbackName" placeholder="Nama Anda" required>
+                            </div>
+                            <div class="form-group">
+                                <label>EMAIL / WA</label>
+                                <input type="text" id="feedbackContact" placeholder="Nomor kontak Anda" required>
+                            </div>
+                            <div class="form-group">
+                                <label>PESAN</label>
+                                <textarea id="feedbackMessage" rows="3" placeholder="Tuliskan saran atau pertanyaan katering..." required></textarea>
+                            </div>
+                            <button type="submit" style="width:100%; background:var(--primary); color:white; border:none; padding:10px; border-radius:20px; font-weight:700; cursor:pointer;">Kirim Pesan</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

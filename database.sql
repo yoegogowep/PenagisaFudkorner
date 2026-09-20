@@ -24,6 +24,15 @@ create table if not exists public.link_clicks (
     clicked_at timestamptz not null default now()
 );
 
+create table if not exists public.feedback_messages (
+    id uuid primary key default gen_random_uuid(),
+    name text not null check (char_length(trim(name)) between 1 and 100),
+    contact text not null check (char_length(trim(contact)) between 1 and 200),
+    message text not null check (char_length(trim(message)) between 1 and 2000),
+    status text not null default 'new' check (status in ('new', 'read', 'replied')),
+    created_at timestamptz not null default now()
+);
+
 create table if not exists public.sales_orders (
     id uuid primary key default gen_random_uuid(),
     customer_name text not null check (char_length(trim(customer_name)) between 1 and 100),
@@ -58,6 +67,7 @@ create table if not exists public.sales_order_items (
 );
 
 create index if not exists comments_created_at_idx on public.comments (created_at desc);
+create index if not exists feedback_messages_created_at_idx on public.feedback_messages (created_at desc);
 create index if not exists link_clicks_clicked_at_idx on public.link_clicks (clicked_at desc);
 create index if not exists sales_orders_created_at_idx on public.sales_orders (created_at desc);
 create index if not exists sales_orders_status_idx on public.sales_orders (status);
@@ -119,6 +129,26 @@ create policy "admin dashboard can approve comments"
 drop policy if exists "admin dashboard can delete comments" on public.comments;
 create policy "admin dashboard can delete comments"
     on public.comments for delete
+    using (true);
+
+-- Kritik dan saran dari kontak bisa disimpan dari frontend dan dibaca oleh admin.
+alter table public.feedback_messages enable row level security;
+drop policy if exists "public can submit feedback" on public.feedback_messages;
+create policy "public can submit feedback"
+    on public.feedback_messages for insert
+    with check (true);
+drop policy if exists "admin can read feedback" on public.feedback_messages;
+create policy "admin can read feedback"
+    on public.feedback_messages for select
+    using (true);
+drop policy if exists "admin can update feedback" on public.feedback_messages;
+create policy "admin can update feedback"
+    on public.feedback_messages for update
+    using (true)
+    with check (status in ('new', 'read', 'replied'));
+drop policy if exists "admin can delete feedback" on public.feedback_messages;
+create policy "admin can delete feedback"
+    on public.feedback_messages for delete
     using (true);
 
 -- Statistik klik hanya menerima data dari frontend dan tidak dibuka untuk pembacaan publik.

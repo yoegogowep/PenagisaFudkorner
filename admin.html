@@ -7,7 +7,11 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Dashboard Admin - Penagisa Food Corner</title>
     <script>
-        if (localStorage.getItem('umkm_theme') === 'dark') {
+        const savedTheme = localStorage.getItem('umkm_theme');
+        if (!savedTheme) {
+            localStorage.setItem('umkm_theme', 'dark');
+            document.documentElement.dataset.theme = 'dark';
+        } else if (savedTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
         }
     </script>
@@ -55,11 +59,12 @@
         <p class="page-subtitle">Ringkasan singkat dan pengelolaan review Penagisa Food Corner.</p>
 
         <div class="grid-3">
-            <div class="stat-box">
+            <button class="stat-box stat-link" type="button" onclick="openAdminReviews()">
                 <i class="fa-solid fa-comments"></i>
                 <div class="stat-number" id="statTotalReviews">0</div>
                 <div class="stat-label">Total Review</div>
-            </div>
+                <span class="stat-action-hint">Lihat komentar</span>
+            </button>
             <div class="stat-box">
                 <i class="fa-solid fa-star"></i>
                 <div class="stat-number" id="statAvgRating">0</div>
@@ -83,27 +88,23 @@
                 <div class="stat-number" id="dbTotalOrders">-</div>
                 <div class="stat-label">Total Pesanan</div>
             </div>
-            <div class="stat-box">
+            <button class="stat-box stat-link" type="button" onclick="openAdminSales()">
                 <i class="fa-solid fa-money-bill-wave"></i>
                 <div class="stat-number" id="dbTotalSales">-</div>
                 <div class="stat-label">Total Penjualan</div>
-            </div>
-        </div>
-
-        <div class="info-card menu-sales-card">
-            <div class="admin-section-heading">
-                <div>
-                    <span class="section-eyebrow">Performa produk</span>
-                    <h3><i class="fa-solid fa-chart-column"></i> Total penjualan setiap menu</h3>
-                </div>
-                <i class="fa-solid fa-ranking-star admin-heading-icon" aria-hidden="true"></i>
-            </div>
-            <div id="menuSalesList" class="menu-sales-list"><p class="admin-empty-state">Memuat penjualan menu...</p></div>
+                <span class="stat-action-hint">Lihat performa produk</span>
+            </button>
         </div>
 
         <div class="info-card">
-            <h3><i class="fa-solid fa-database"></i> Data Database</h3>
-            <p id="databaseStatus" style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Memuat data Supabase...</p>
+            <div class="admin-section-heading">
+                <div>
+                    <span class="section-eyebrow">Pusat aktivitas</span>
+                    <h3><i class="fa-solid fa-database"></i> Data Pesanan</h3>
+                </div>
+                <span class="admin-live-label"><i class="fa-solid fa-circle"></i> Terhubung</span>
+            </div>
+            <p id="databaseStatus" class="admin-database-status">Memuat data Supabase...</p>
             <div class="admin-order-search">
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                 <input id="adminOrderSearch" type="search" placeholder="Cari kode pesanan atau nama pelanggan..." aria-label="Cari kode pesanan atau nama pelanggan" autocomplete="off">
@@ -134,12 +135,6 @@
         </div>
 
         <div class="info-card">
-            <h3><i class="fa-solid fa-comments"></i> Kelola Review</h3>
-            <p style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Hapus review yang tidak sesuai. Perubahan tersimpan otomatis di browser ini.</p>
-            <div id="adminReviewList"></div>
-        </div>
-
-        <div class="info-card">
             <h3><i class="fa-solid fa-arrows-rotate"></i> Reset Data Uji Coba</h3>
             <p style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Berguna sebelum bazar dibuka agar keranjang & review kembali ke kondisi awal.</p>
             <div class="admin-reset-actions">
@@ -155,6 +150,38 @@
         <div class="info-card">
             <h3><i class="fa-solid fa-circle-info"></i> Menu, Harga & Kontak</h3>
             <p>Daftar menu, harga, dan nomor WhatsApp saat ini diatur langsung di <code>script.js</code>, sedangkan alamat dan kontak diatur di <code>alamat.html</code> dan <code>kontak.html</code>, sesuai catatan pada README proyek.</p>
+        </div>
+    </div>
+
+    <div class="admin-data-modal" id="adminReviewsModal" aria-hidden="true">
+        <div class="admin-data-backdrop" onclick="closeAdminDataModal('adminReviewsModal')"></div>
+        <div class="admin-data-dialog" role="dialog" aria-modal="true" aria-labelledby="adminReviewsTitle">
+            <div class="admin-data-dialog-header">
+                <div><span class="section-eyebrow">Masukan pelanggan</span><h2 id="adminReviewsTitle"><i class="fa-solid fa-comments"></i> Riwayat Komentar</h2></div>
+                <button type="button" class="admin-data-close" onclick="closeAdminDataModal('adminReviewsModal')" aria-label="Tutup komentar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="admin-data-dialog-subtitle">Kelola komentar pelanggan seperti sebelumnya.</p>
+            <div id="adminReviewList"></div>
+
+            <div class="admin-divider"></div>
+            <div class="admin-feedback-section">
+                <div class="admin-data-dialog-header admin-feedback-header">
+                    <div><span class="section-eyebrow">Masukan pelanggan</span><h3><i class="fa-solid fa-message"></i> Kritik & Saran</h3></div>
+                </div>
+                <div id="adminFeedbackList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-data-modal" id="adminSalesModal" aria-hidden="true">
+        <div class="admin-data-backdrop" onclick="closeAdminDataModal('adminSalesModal')"></div>
+        <div class="admin-data-dialog" role="dialog" aria-modal="true" aria-labelledby="adminSalesTitle">
+            <div class="admin-data-dialog-header">
+                <div><span class="section-eyebrow">Ringkasan menu</span><h2 id="adminSalesTitle"><i class="fa-solid fa-chart-column"></i> Performa Produk</h2></div>
+                <button type="button" class="admin-data-close" onclick="closeAdminDataModal('adminSalesModal')" aria-label="Tutup penjualan"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="admin-data-dialog-subtitle">Menu yang paling banyak dipesan dan total penjualannya.</p>
+            <div id="menuSalesList" class="menu-sales-list"><p class="admin-empty-state">Memuat penjualan menu...</p></div>
         </div>
     </div>
 

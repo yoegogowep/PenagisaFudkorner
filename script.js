@@ -52,6 +52,7 @@ const ADMIN_TAP_WINDOW_MS = 1200;
 let adminTapCount = 0;
 let adminTapLastTime = 0;
 let adminDatabaseComments = [];
+let adminDatabaseFeedback = [];
 let adminConfirmAction = null;
 let adminOrderSearchQuery = '';
 let adminOrderStatusFilter = 'all';
@@ -93,6 +94,23 @@ async function saveCommentToDatabase(comment) {
     if (!supabaseClient) return;
     const { error } = await supabaseClient.from('comments').insert({ ...comment, status: 'pending' });
     if (error) console.error('Komentar gagal disimpan ke database:', error);
+}
+
+async function saveFeedbackToDatabase(feedback) {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.from('feedback_messages').insert({
+        name: feedback.name,
+        contact: feedback.contact,
+        message: feedback.message,
+        status: 'new'
+    });
+
+    if (error) {
+        console.error('Kritik & saran gagal disimpan ke database:', error);
+        return false;
+    }
+
+    return true;
 }
 
 async function loadCommentsFromDatabase() {
@@ -312,12 +330,7 @@ const menuItems = [
         images: [
             "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80",
             "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1461025272758-3c92a5d8b1a3?auto=format&fit=crop&w=900&q=80"
+            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80"
         ]
     },
     {
@@ -332,13 +345,8 @@ const menuItems = [
         highlight: "Berserat lezat, cocok untuk makan siang atau malam dengan porsi yang mengenyangkan.",
         images: [
             "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
             "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=900&q=80"
+            "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=900&q=80"
         ]
     },
 
@@ -354,13 +362,8 @@ const menuItems = [
         highlight: "Rasa creamy dengan aroma kopi yang lembut, cocok untuk dinikmati kapan saja.",
         images: [
             "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
             "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1461025272758-3c92a5d8b1a3?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=900&q=80"
+            "https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=900&q=80"
         ]
     },
     {
@@ -375,7 +378,9 @@ const menuItems = [
         highlight: "Nantikan kejutan menu baru kami.",
         comingSoon: true,
         images: [
-            "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80"
+            "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80"
         ]
     },
     {
@@ -390,7 +395,9 @@ const menuItems = [
         highlight: "Nantikan minuman baru yang menyegarkan.",
         comingSoon: true,
         images: [
-            "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80"
+            "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80"
         ]
     },
     {
@@ -405,7 +412,9 @@ const menuItems = [
         highlight: "Nantikan sensasi pedas gurih dengan isian yang lebih lengkap.",
         comingSoon: true,
         images: [
-            "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80"
+            "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=900&q=80",
+            "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80"
         ]
     }
 ];
@@ -632,7 +641,7 @@ function closeProductModal() {
     }, 200);
 }
 
-function sendFeedbackToWhatsApp(event) {
+async function sendFeedbackToWhatsApp(event) {
     event.preventDefault();
 
     const name = document.getElementById('feedbackName').value.trim();
@@ -644,9 +653,18 @@ function sendFeedbackToWhatsApp(event) {
         return;
     }
 
+    const feedback = { name, contact, message };
+    const saved = await saveFeedbackToDatabase(feedback);
+
     const text = `*KRITIK & SARAN - Penagisa Food Corner*\n\n*Nama:* ${name}\n*Kontak:* ${contact}\n*Pesan:*\n${message}`;
     window.open(`https://wa.me/${NOMOR_WA_UMKM}?text=${encodeURIComponent(text)}`, '_blank');
     document.getElementById('feedbackForm').reset();
+
+    if (saved && supabaseClient) {
+        showInlineAlert('Kritik & saran berhasil dikirim dan tersimpan di database admin.');
+    } else {
+        showInlineAlert('Pesan terkirim via WhatsApp, tetapi penyimpanan database belum aktif.');
+    }
 }
 
 function getReviewAverage(reviews) {
@@ -1473,8 +1491,10 @@ function unlockAdminDashboard() {
     if (dashboard) dashboard.classList.add('is-visible');
 
     renderAdminReviews();
+    renderAdminFeedback();
     renderAdminStats();
     loadAdminComments();
+    loadAdminFeedback();
     loadAdminDatabaseData();
 }
 
@@ -1487,8 +1507,10 @@ function initAdminPage() {
     if (sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true') {
         dashboard.classList.add('is-visible');
         renderAdminReviews();
+        renderAdminFeedback();
         renderAdminStats();
         loadAdminComments();
+        loadAdminFeedback();
         loadAdminDatabaseData();
     } else {
         openAdminGate();
@@ -1498,6 +1520,34 @@ function initAdminPage() {
 function adminLogout() {
     sessionStorage.removeItem(ADMIN_SESSION_KEY);
     window.location.href = 'index.html';
+}
+
+function openAdminDataModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('review-popup-open');
+}
+
+function closeAdminDataModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    if (!document.querySelector('.admin-data-modal.active')) document.body.classList.remove('review-popup-open');
+}
+
+function openAdminReviews() {
+    renderAdminReviews();
+    renderAdminFeedback();
+    loadAdminFeedback();
+    openAdminDataModal('adminReviewsModal');
+}
+
+function openAdminSales() {
+    loadAdminDatabaseData();
+    openAdminDataModal('adminSalesModal');
 }
 
 // Toast ringkas untuk aksi di dashboard admin (pakai gaya visual .inline-alert)
@@ -1521,6 +1571,38 @@ function showAdminToast(title, message, duration = 2600) {
         el.classList.add('hide');
         setTimeout(() => el.remove(), 220);
     }, duration);
+}
+
+function renderAdminFeedback() {
+    const list = document.getElementById('adminFeedbackList');
+    if (!list) return;
+
+    if (adminDatabaseFeedback.length > 0) {
+        list.innerHTML = '';
+        adminDatabaseFeedback.forEach((item) => {
+            const row = document.createElement('div');
+            row.className = 'admin-review-row';
+            row.innerHTML = `
+                <div class="admin-review-info">
+                    <div class="admin-review-top">
+                        <strong></strong>
+                        <span class="admin-review-stars">Kritik & Saran</span>
+                    </div>
+                    <div class="admin-review-food"></div>
+                    <p class="admin-review-message"></p>
+                    <small class="admin-review-status"></small>
+                </div>
+            `;
+            row.querySelector('strong').textContent = item.name;
+            row.querySelector('.admin-review-food').textContent = item.contact;
+            row.querySelector('.admin-review-message').textContent = item.message;
+            row.querySelector('.admin-review-status').textContent = `Status: ${item.status}`;
+            list.appendChild(row);
+        });
+        return;
+    }
+
+    list.innerHTML = '<p class="review-empty">Belum ada kritik & saran.</p>';
 }
 
 function renderAdminReviews() {
@@ -1904,7 +1986,7 @@ function setupMenuSearch() {
 
 // INIT
 document.addEventListener("DOMContentLoaded", () => {
-    applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+    applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
     setupHamburgerNavigation();
     recordAudienceClick();
     loadCommentsFromDatabase();
@@ -2021,6 +2103,8 @@ document.addEventListener("DOMContentLoaded", () => {
         closeProductModal();
         closeAdminGate();
         closeOrderStatus();
+        closeAdminDataModal('adminReviewsModal');
+        closeAdminDataModal('adminSalesModal');
     });
     updateCartUI();
     refreshUserOrdersFromDatabase();
@@ -2427,6 +2511,25 @@ function setupHamburgerNavigation() {
             closeAdminConfirm();
         }
     });
+}
+
+async function loadAdminFeedback() {
+    const list = document.getElementById('adminFeedbackList');
+    if (!list || !supabaseClient) return;
+
+    const { data, error } = await supabaseClient
+        .from('feedback_messages')
+        .select('id, name, contact, message, status, created_at')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Kritik & saran database gagal dimuat:', error);
+        list.innerHTML = '<p class="review-empty">Data kritik & saran belum bisa dimuat. Pastikan table feedback_messages sudah dibuat di database.sql.</p>';
+        return;
+    }
+
+    adminDatabaseFeedback = data || [];
+    renderAdminFeedback();
 }
 
 async function loadAdminComments() {

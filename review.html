@@ -6,7 +6,11 @@
     <link rel="icon" type="image/png" href="logo-penagisa.png?v=4">
     <title>Review - Penagisa Food Corner</title>
     <script>
-        if (localStorage.getItem('umkm_theme') === 'dark') {
+        const savedTheme = localStorage.getItem('umkm_theme');
+        if (!savedTheme) {
+            localStorage.setItem('umkm_theme', 'dark');
+            document.documentElement.dataset.theme = 'dark';
+        } else if (savedTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
         }
     </script>
@@ -42,10 +46,6 @@
                 <a href="review.html" class="nav-link active">Review</a>
                 <a href="kontak.html" class="nav-link">Kontak</a>
             </nav>
-            <button class="cart-icon-btn" id="floatingCart" type="button" aria-label="Lihat pesanan" title="Lihat pesanan">
-                <i class="fa-solid fa-basket-shopping"></i>
-                <span class="cart-badge" id="nav-cart-count">0</span>
-            </button>
         </div>
     </header>
 

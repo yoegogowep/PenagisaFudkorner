@@ -6,7 +6,11 @@
     <link rel="icon" type="image/png" href="logo-penagisa.png?v=4">
     <title>Menu - Penagisa Food Corner</title>
     <script>
-        if (localStorage.getItem('umkm_theme') === 'dark') {
+        const savedTheme = localStorage.getItem('umkm_theme');
+        if (!savedTheme) {
+            localStorage.setItem('umkm_theme', 'dark');
+            document.documentElement.dataset.theme = 'dark';
+        } else if (savedTheme === 'dark') {
             document.documentElement.dataset.theme = 'dark';
         }
     </script>
@@ -229,7 +233,7 @@
                     <p class="product-highlight"></p>
                 </div>
                 <div class="ingredient-box">
-                    <h4>Bahan utama</h4>
+                    <h4>Komposisi</h4>
                     <ul class="ingredient-list"></ul>
                 </div>
                 <button class="product-add-btn"><i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang</button>
