@@ -1877,10 +1877,106 @@ async function loadAdminDatabaseData() {
         `).join('') : '<p class="admin-empty-state">Belum ada data penjualan menu.</p>';
     }
 
+    const isMobileOrderList = window.innerWidth <= 599;
+    ordersList.classList.toggle('mobile-order-list', isMobileOrderList);
     ordersList.innerHTML = '';
+
     if (!filteredOrders.length) {
-        ordersList.innerHTML = '<tr><td colspan="9">Belum ada pesanan di database.</td></tr>';
+        if (isMobileOrderList) {
+            ordersList.innerHTML = '<div class="admin-mobile-order-empty">Belum ada pesanan di database.</div>';
+        } else {
+            ordersList.innerHTML = '<tr><td colspan="9">Belum ada pesanan di database.</td></tr>';
+        }
         updateAdminOrderExpandButton(0);
+        return;
+    }
+
+    if (isMobileOrderList) {
+        visibleOrders.forEach(order => {
+            const card = document.createElement('div');
+            card.className = 'admin-mobile-order-card';
+
+            const header = document.createElement('div');
+            header.className = 'mobile-order-header';
+            header.innerHTML = `
+                <div class="mobile-order-header-main">
+                    <strong>#${String(order.id).slice(0, 8).toUpperCase()}</strong>
+                    <span>${order.customer_name || '-'}</span>
+                </div>
+                <button type="button" class="admin-order-collapse-btn mobile-order-toggle">
+                    <i class="fa-solid fa-chevron-up"></i> Minimalkan
+                </button>
+            `;
+
+            const details = document.createElement('div');
+            details.className = 'mobile-order-details';
+            details.innerHTML = `
+                <div class="mobile-order-row"><span>Waktu</span><strong>${new Date(order.created_at).toLocaleString('id-ID')}</strong></div>
+                <div class="mobile-order-row"><span>Pesanan</span><strong>${order.order_type || '-'}</strong></div>
+                <div class="mobile-order-row"><span>Alamat</span><strong>${order.address || '-'}</strong></div>
+                <div class="mobile-order-row"><span>Status</span><strong>${order.delivery_confirmation === 'not_received' ? 'Belum sampai' : formatOrderStatus(order.status)}</strong></div>
+                <div class="mobile-order-row"><span>Pembayaran</span><strong>${order.payment_status === 'paid' ? 'Sudah masuk' : order.payment_method === 'QRIS' ? 'Menunggu verifikasi' : 'COD'}</strong></div>
+                <div class="mobile-order-row"><span>Total</span><strong>Rp ${Number(order.total_amount || 0).toLocaleString('id-ID')}</strong></div>
+            `;
+
+            const actions = document.createElement('div');
+            actions.className = 'mobile-order-actions';
+
+            const statusSelect = document.createElement('select');
+            statusSelect.className = 'admin-order-status-select';
+            ORDER_STATUS_STEPS.concat(['confirmed', 'completed', 'cancelled']).forEach((statusValue) => {
+                const option = document.createElement('option');
+                option.value = statusValue;
+                option.textContent = formatOrderStatus(statusValue);
+                option.selected = order.status === statusValue;
+                statusSelect.appendChild(option);
+            });
+            statusSelect.addEventListener('change', () => updateAdminOrderStatus(order.id, statusSelect.value));
+            actions.appendChild(statusSelect);
+
+            if (order.payment_proof_url) {
+                const proofLink = document.createElement('button');
+                proofLink.type = 'button';
+                proofLink.className = 'admin-proof-link';
+                proofLink.innerHTML = '<i class="fa-solid fa-image"></i> Lihat bukti';
+                proofLink.addEventListener('click', () => openPaymentProofModal(order.payment_proof_url));
+                actions.appendChild(proofLink);
+            }
+            if (order.payment_method === 'QRIS' && order.payment_status !== 'paid') {
+                const verifyButton = document.createElement('button');
+                verifyButton.type = 'button';
+                verifyButton.className = 'admin-payment-confirm-btn';
+                verifyButton.innerHTML = '<i class="fa-solid fa-check"></i> Sudah masuk';
+                verifyButton.addEventListener('click', () => verifyPaymentOrder(order.id));
+                actions.appendChild(verifyButton);
+            }
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'admin-order-delete-btn';
+            deleteButton.innerHTML = '<i class="fa-solid fa-trash-can"></i> Hapus';
+            deleteButton.addEventListener('click', () => {
+                openAdminConfirm(
+                    'Hapus pesanan?',
+                    `Pesanan ${String(order.id).slice(0, 8).toUpperCase()} milik ${order.customer_name} akan dihapus permanen.`,
+                    () => deleteAdminOrder(order.id)
+                );
+            });
+            actions.appendChild(deleteButton);
+
+            const toggleButton = header.querySelector('.mobile-order-toggle');
+            toggleButton.addEventListener('click', () => {
+                const isCollapsed = card.classList.toggle('is-collapsed');
+                toggleButton.innerHTML = isCollapsed
+                    ? '<i class="fa-solid fa-chevron-down"></i> Buka detail'
+                    : '<i class="fa-solid fa-chevron-up"></i> Minimalkan';
+            });
+
+            card.appendChild(header);
+            card.appendChild(details);
+            card.appendChild(actions);
+            ordersList.appendChild(card);
+        });
+        updateAdminOrderExpandButton(filteredOrders.length);
         return;
     }
 
