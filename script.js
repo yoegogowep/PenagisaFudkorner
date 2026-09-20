@@ -1574,35 +1574,42 @@ function showAdminToast(title, message, duration = 2600) {
 }
 
 function renderAdminFeedback() {
-    const list = document.getElementById('adminFeedbackList');
-    if (!list) return;
+    const containers = [
+        document.getElementById('adminDashboardFeedbackList'),
+        document.getElementById('adminFeedbackList')
+    ].filter(Boolean);
 
-    if (adminDatabaseFeedback.length > 0) {
+    if (!containers.length) return;
+
+    containers.forEach((list) => {
         list.innerHTML = '';
-        adminDatabaseFeedback.forEach((item) => {
-            const row = document.createElement('div');
-            row.className = 'admin-review-row';
-            row.innerHTML = `
-                <div class="admin-review-info">
-                    <div class="admin-review-top">
-                        <strong></strong>
-                        <span class="admin-review-stars">Kritik & Saran</span>
-                    </div>
-                    <div class="admin-review-food"></div>
-                    <p class="admin-review-message"></p>
-                    <small class="admin-review-status"></small>
-                </div>
-            `;
-            row.querySelector('strong').textContent = item.name;
-            row.querySelector('.admin-review-food').textContent = item.contact;
-            row.querySelector('.admin-review-message').textContent = item.message;
-            row.querySelector('.admin-review-status').textContent = `Status: ${item.status}`;
-            list.appendChild(row);
-        });
-        return;
-    }
 
-    list.innerHTML = '<p class="review-empty">Belum ada kritik & saran.</p>';
+        if (adminDatabaseFeedback.length > 0) {
+            adminDatabaseFeedback.forEach((item) => {
+                const row = document.createElement('div');
+                row.className = 'admin-review-row';
+                row.innerHTML = `
+                    <div class="admin-review-info">
+                        <div class="admin-review-top">
+                            <strong></strong>
+                            <span class="admin-review-stars">Kritik & Saran</span>
+                        </div>
+                        <div class="admin-review-food"></div>
+                        <p class="admin-review-message"></p>
+                        <small class="admin-review-status"></small>
+                    </div>
+                `;
+                row.querySelector('strong').textContent = item.name;
+                row.querySelector('.admin-review-food').textContent = item.contact;
+                row.querySelector('.admin-review-message').textContent = item.message;
+                row.querySelector('.admin-review-status').textContent = `Status: ${item.status}`;
+                list.appendChild(row);
+            });
+            return;
+        }
+
+        list.innerHTML = '<p class="review-empty">Belum ada kritik & saran.</p>';
+    });
 }
 
 function renderAdminReviews() {
@@ -2514,8 +2521,12 @@ function setupHamburgerNavigation() {
 }
 
 async function loadAdminFeedback() {
-    const list = document.getElementById('adminFeedbackList');
-    if (!list || !supabaseClient) return;
+    const containers = [
+        document.getElementById('adminDashboardFeedbackList'),
+        document.getElementById('adminFeedbackList')
+    ].filter(Boolean);
+
+    if (!containers.length || !supabaseClient) return;
 
     const { data, error } = await supabaseClient
         .from('feedback_messages')
@@ -2524,7 +2535,9 @@ async function loadAdminFeedback() {
 
     if (error) {
         console.error('Kritik & saran database gagal dimuat:', error);
-        list.innerHTML = '<p class="review-empty">Data kritik & saran belum bisa dimuat. Pastikan table feedback_messages sudah dibuat di database.sql.</p>';
+        containers.forEach((list) => {
+            list.innerHTML = '<p class="review-empty">Data kritik & saran belum bisa dimuat. Pastikan table feedback_messages sudah dibuat di database.sql.</p>';
+        });
         return;
     }
 

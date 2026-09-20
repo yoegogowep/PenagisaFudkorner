@@ -4961,6 +4961,48 @@ header {
     animation: gateContentIn 0.4s ease both;
 }
 
+.admin-shell {
+    display: grid;
+    gap: 22px;
+}
+
+.admin-stat-grid {
+    margin-bottom: 0;
+}
+
+.admin-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);
+    gap: 22px;
+    align-items: start;
+}
+
+.admin-panel-stack {
+    display: grid;
+    gap: 22px;
+}
+
+.admin-panel {
+    height: 100%;
+}
+
+.admin-panel-wide {
+    min-height: 100%;
+}
+
+.admin-section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.admin-section-heading h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
 .admin-review-row {
     display: flex;
     justify-content: space-between;
@@ -6121,14 +6163,107 @@ body.galeri-lock {
         padding-top: env(safe-area-inset-top);
     }
 
+    .page-container {
+        width: 100%;
+        padding-inline: 14px;
+    }
+
     .nav-container {
         min-height: 58px;
         gap: 6px;
+        justify-content: space-between;
+        padding-inline: 10px;
+    }
+
+    .nav-hamburger {
+        order: 1;
+        margin-right: 0;
+        flex-shrink: 0;
     }
 
     .logo {
-        order: 1;
-        max-width: calc(100% - 178px);
+        order: 2;
+        max-width: none;
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 14px;
+        justify-content: center;
+    }
+
+    .cart-icon-btn,
+    .order-status-icon-btn,
+    .nav-tools-menu {
+        order: 3;
+        margin-left: 0;
+    }
+
+    .order-status-icon-btn {
+        margin-left: 6px;
+    }
+
+    .home-feature-band,
+    .home-cta-strip,
+    .feature-grid,
+    .contact-grid,
+    .location-grid,
+    .review-page-grid,
+    .faq-grid,
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .home-cta-strip {
+        padding: 18px 14px;
+    }
+
+    .menu-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .feedback-form-fields,
+    .review-form-grid,
+    .checkout-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .home-hero-buttons,
+    .admin-reset-actions,
+    .nav-tools,
+    .contact-card-btn,
+    .user-order-actions {
+        flex-direction: column;
+    }
+
+    .contact-card-btn,
+    .wa-submit-btn,
+    .add-to-cart-btn,
+    .admin-reset-btn,
+    .home-order-btn,
+    .button-primary,
+    .button-secondary {
+        width: 100%;
+    }
+
+    .product-details {
+        padding: 20px 16px 18px;
+    }
+
+    .site-footer .footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 18px;
+    }
+
+    .site-footer .footer-contact {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+        font-size: 16px;
     }
 
     .cart-icon-btn { order: 2; margin-left: auto; }
@@ -6138,9 +6273,25 @@ body.galeri-lock {
     .cart-icon-btn,
     .order-status-icon-btn,
     .theme-toggle {
-        flex: 0 0 40px;
-        width: 40px;
-        height: 40px;
+        flex: 0 0 42px;
+        width: 42px;
+        height: 42px;
+    }
+
+    .cart-icon-btn { margin-left: 6px; }
+    .order-status-icon-btn { margin-left: 6px; }
+
+    .cart-badge {
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+        top: -3px;
+        right: -3px;
+    }
+
+    .order-status-dot {
+        top: 8px;
+        right: 8px;
     }
 
     .nav-menu {
@@ -6482,6 +6633,22 @@ button.stat-box {
 .admin-data-dialog-subtitle { margin: 6px 0 16px; color: var(--text-muted); font-size: 12px; }
 .admin-data-close { border: 0; background: transparent; color: var(--text-muted); font-size: 19px; cursor: pointer; }
 
+.admin-divider {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.18), rgba(var(--primary-rgb), 0.06));
+    margin: 18px 0;
+}
+
+.admin-feedback-section {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-feedback-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
 /* Responsive stability layer */
 html,
 body {
@@ -6561,10 +6728,24 @@ video {
     }
 }
 
+@media (max-width: 950px) {
+    .admin-main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-panel-stack {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 599px) {
     .page-container {
         width: 100%;
         padding-inline: 14px;
+    }
+
+    .admin-panel-stack {
+        grid-template-columns: 1fr;
     }
 
     .home-hero {

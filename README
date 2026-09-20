@@ -1,11 +1,24 @@
 # Penagisa Food Corner
 
-Website menu dan pemesanan online untuk Penagisa Food Corner.
+Website menu, pemesanan online, review, dan dashboard admin untuk Penagisa Food Corner.
 
 ## Cara Menjalankan
 
 Buka `index.html` di browser atau jalankan melalui Live Server di VS Code.
-Website menggunakan beberapa CDN untuk Font Awesome, Google Fonts, dan QR Code, sehingga koneksi internet diperlukan agar semua aset tampil sempurna.
+Website menggunakan CDN untuk Font Awesome, Google Fonts, dan QR Code, jadi koneksi internet diperlukan agar seluruh aset tampil dengan benar.
+
+## Struktur Utama
+
+- `index.html` — halaman utama dan landing page
+- `menu.html` — halaman menu dan detail produk
+- `review.html` — halaman review pelanggan
+- `kontak.html` — formulir kontak dan kritik & saran
+- `alamat.html` — informasi lokasi dan peta
+- `admin.html` — dashboard admin
+- `script.js` — logika menu, keranjang, theme, review, Supabase, dan dashboard
+- `style.css` — seluruh tampilan, tema, dan animasi
+- `database.sql` — skema database Supabase
+- `supabase-config.js` — konfigurasi koneksi Supabase
 
 ## Bagian Yang Bisa Diubah
 
@@ -14,10 +27,10 @@ Website menggunakan beberapa CDN untuk Font Awesome, Google Fonts, dan QR Code, 
 Buka `script.js`, lalu ubah nilai berikut dengan format internasional tanpa tanda `+`:
 
 ```js
-const NOMOR_WA_UMKM = "6282223346091";
+const NOMOR_WA_UMKM = "6282135783347";
 ```
 
-Nomor ini digunakan untuk tombol pemesanan via WhatsApp.
+Nomor ini dipakai untuk tombol pemesanan via WhatsApp.
 
 ### 2. Data Menu Produk
 
@@ -28,7 +41,7 @@ Masih di `script.js`, ubah isi array `menuItems` untuk mengatur:
 - Harga pada `price`
 - Deskripsi singkat pada `shortDesc`
 - Deskripsi lengkap pada `desc`
-- Bahan utama pada `ingredients`
+- Komposisi produk pada `ingredients`
 - Keunggulan produk pada `highlight`
 - Foto produk pada array `images`
 
@@ -36,21 +49,21 @@ Contoh bagian produk:
 
 ```js
 {
-	id: 1,
-	name: "Nama Produk",
-	category: "makanan",
-	price: 10000,
-	shortDesc: "Deskripsi singkat produk.",
-	desc: "Deskripsi lengkap produk.",
-	ingredients: ["Bahan 1", "Bahan 2"],
-	highlight: "Keunggulan produk.",
-	images: ["https://alamat-foto.com/produk.jpg"]
+  id: 1,
+  name: "Nama Produk",
+  category: "makanan",
+  price: 10000,
+  shortDesc: "Deskripsi singkat produk.",
+  desc: "Deskripsi lengkap produk.",
+  ingredients: ["Komposisi 1", "Komposisi 2"],
+  highlight: "Keunggulan produk.",
+  images: ["https://alamat-foto.com/produk.jpg"]
 }
 ```
 
 ### 3. Warna Dan Tampilan
 
-Buka `style.css`, lalu ubah variabel di bagian `:root`:
+Buka `style.css`, lalu ubah variabel pada `:root`:
 
 - `--primary`: warna utama tombol dan aksen
 - `--primary-hover`: warna saat tombol diarahkan
@@ -59,6 +72,8 @@ Buka `style.css`, lalu ubah variabel di bagian `:root`:
 - `--bg-light`: warna latar sekunder
 - `--text-dark`: warna teks utama
 - `--text-muted`: warna teks pendukung
+
+Tema saat ini dibuat dengan gaya gelap merah velvet + hitam untuk tampilan premium.
 
 ### 4. Kontak Dan Media Sosial
 
@@ -92,21 +107,32 @@ Pada setiap file HTML, ubah jika diperlukan:
 
 QR Code berada di `kontak.html` dan dibuat otomatis oleh `script.js` menggunakan alamat website yang sedang dibuka. Jika website sudah diunggah ke hosting, QR Code akan mengarah ke alamat hosting tersebut.
 
+## Fitur Utama
+
+- Halaman menu dengan kartu produk interaktif
+- Detail produk popup dengan galeri foto dan navigasi antar gambar
+- Keranjang belanja berbasis `localStorage`
+- Review pelanggan dengan rating bintang
+- Kritik & saran dari kontak yang dikirim ke WhatsApp dan juga disimpan ke database
+- Dashboard admin untuk melihat data review, kritik & saran, serta pesanan
+- Data penjualan dan statistik dari Supabase
+
 ## Catatan
 
 - Keranjang belanja disimpan di `localStorage` browser.
-- Pesanan tetap dikirim melalui WhatsApp dan juga disimpan ke database jika Supabase sudah dikonfigurasi.
-- Form kontak saat ini hanya mengirim pesan ke WhatsApp; belum disimpan ke database.
+- Pesanan tetap dikirim melalui WhatsApp dan juga tersimpan ke database jika Supabase sudah dikonfigurasi.
+- Form kritik & saran saat ini juga menjalankan penyimpanan database dan tetap membuka WhatsApp untuk kebutuhan komunikasi cepat.
 
 ## Database
 
 File `database.sql` menyiapkan database PostgreSQL/Supabase untuk:
 
-- `comments`: komentar/review pelanggan dan status moderasinya.
-- `link_clicks`: waktu, sumber, referrer, perangkat, dan URL yang diklik audiens.
-- `sales_orders`: data pelanggan, jenis pesanan, status, total penjualan, dan waktu pemesanan.
-- `sales_order_items`: rincian menu, jumlah, harga satuan, dan subtotal setiap pesanan.
-- `admin_dashboard`: view ringkasan komentar, klik link, pesanan, omzet, dan pesanan baru.
+- `comments`: komentar/review pelanggan dan status moderasinya
+- `feedback_messages`: kritik & saran user beserta statusnya
+- `link_clicks`: waktu, sumber, referrer, perangkat, dan URL yang diklik audiens
+- `sales_orders`: data pelanggan, jenis pesanan, status, total penjualan, dan waktu pemesanan
+- `sales_order_items`: rincian menu, jumlah, harga satuan, dan subtotal setiap pesanan
+- `admin_dashboard`: view ringkasan komentar, klik link, pesanan, omzet, dan pesanan baru
 
 ### Cara Menyiapkan
 
@@ -116,6 +142,18 @@ File `database.sql` menyiapkan database PostgreSQL/Supabase untuk:
 4. Buka `supabase-config.js`, lalu isi `url` dengan Project URL dan `anonKey` dengan anon public key.
 5. Jalankan website melalui Live Server atau hosting. Jangan menaruh service role key di file frontend.
 
-Skema sudah menggunakan Row Level Security. Komentar publik dikirim sebagai `pending`, klik link hanya dapat ditambahkan, dan pesanan publik dibuat sebagai `new`. Pembacaan serta perubahan data dashboard harus melalui akun admin atau backend yang terautentikasi.
+Skema sudah menggunakan Row Level Security. Komentar publik dikirim sebagai `pending`, kritik & saran dapat disimpan secara publik, sementara pembacaan dan moderasi dashboard harus dilakukan lewat akun admin atau backend yang sudah terautentikasi.
 
-Jika `supabase-config.js` masih kosong, website otomatis memakai `localStorage` seperti sebelumnya. Setelah konfigurasi diisi, komentar approved dari database akan tampil di halaman review, dan data klik serta pesanan mulai tercatat lintas perangkat.
+Jika `supabase-config.js` masih kosong, website otomatis memakai `localStorage` seperti sebelumnya. Setelah konfigurasi diisi, data review yang sudah di-approve, kritik & saran, klik link, serta pesanan mulai tercatat lintas perangkat.
+
+## Tips Penggunaan Admin
+
+- Buka halaman `admin.html`
+- Masukkan kata sandi admin yang sudah ditentukan di `script.js`
+- Setelah masuk, admin dapat melihat:
+  - review pelanggan
+  - kritik & saran
+  - data pesanan
+  - ringkasan penjualan
+
+> Perubahan paling penting terbaru: label produk di modal detail sekarang memakai istilah “Komposisi”, dan form kritik & saran otomatis masuk ke database serta tampil di dashboard admin.

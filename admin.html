@@ -58,98 +58,115 @@
         <h1 class="page-title">Dashboard Admin</h1>
         <p class="page-subtitle">Ringkasan singkat dan pengelolaan review Penagisa Food Corner.</p>
 
-        <div class="grid-3">
-            <button class="stat-box stat-link" type="button" onclick="openAdminReviews()">
-                <i class="fa-solid fa-comments"></i>
-                <div class="stat-number" id="statTotalReviews">0</div>
-                <div class="stat-label">Total Review</div>
-                <span class="stat-action-hint">Lihat komentar</span>
-            </button>
-            <div class="stat-box">
-                <i class="fa-solid fa-star"></i>
-                <div class="stat-number" id="statAvgRating">0</div>
-                <div class="stat-label">Rating Rata-rata</div>
-            </div>
-            <div class="stat-box">
-                <i class="fa-solid fa-bowl-food"></i>
-                <div class="stat-number" id="statTotalMenu">0</div>
-                <div class="stat-label">Menu Aktif</div>
-            </div>
-        </div>
-
-        <div class="grid-3 admin-database-stats">
-            <div class="stat-box">
-                <i class="fa-solid fa-chart-line"></i>
-                <div class="stat-number" id="dbTotalClicks">-</div>
-                <div class="stat-label">Klik Link</div>
-            </div>
-            <div class="stat-box">
-                <i class="fa-solid fa-receipt"></i>
-                <div class="stat-number" id="dbTotalOrders">-</div>
-                <div class="stat-label">Total Pesanan</div>
-            </div>
-            <button class="stat-box stat-link" type="button" onclick="openAdminSales()">
-                <i class="fa-solid fa-money-bill-wave"></i>
-                <div class="stat-number" id="dbTotalSales">-</div>
-                <div class="stat-label">Total Penjualan</div>
-                <span class="stat-action-hint">Lihat performa produk</span>
-            </button>
-        </div>
-
-        <div class="info-card">
-            <div class="admin-section-heading">
-                <div>
-                    <span class="section-eyebrow">Pusat aktivitas</span>
-                    <h3><i class="fa-solid fa-database"></i> Data Pesanan</h3>
+        <div class="admin-shell">
+            <div class="grid-3 admin-stat-grid">
+                <button class="stat-box stat-link" type="button" onclick="openAdminReviews()">
+                    <i class="fa-solid fa-comments"></i>
+                    <div class="stat-number" id="statTotalReviews">0</div>
+                    <div class="stat-label">Total Review</div>
+                    <span class="stat-action-hint">Lihat komentar</span>
+                </button>
+                <div class="stat-box">
+                    <i class="fa-solid fa-star"></i>
+                    <div class="stat-number" id="statAvgRating">0</div>
+                    <div class="stat-label">Rating Rata-rata</div>
                 </div>
-                <span class="admin-live-label"><i class="fa-solid fa-circle"></i> Terhubung</span>
+                <div class="stat-box">
+                    <i class="fa-solid fa-bowl-food"></i>
+                    <div class="stat-number" id="statTotalMenu">0</div>
+                    <div class="stat-label">Menu Aktif</div>
+                </div>
             </div>
-            <p id="databaseStatus" class="admin-database-status">Memuat data Supabase...</p>
-            <div class="admin-order-search">
-                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                <input id="adminOrderSearch" type="search" placeholder="Cari kode pesanan atau nama pelanggan..." aria-label="Cari kode pesanan atau nama pelanggan" autocomplete="off">
-            </div>
-            <div class="admin-order-controls">
-                <label class="admin-order-control">
-                    <span>Status</span>
-                    <select id="adminOrderStatusFilter" aria-label="Filter status pesanan">
-                        <option value="all">Semua pesanan</option>
-                        <option value="processing">Masih proses</option>
-                        <option value="completed">Sudah selesai</option>
-                        <option value="delivery_issue">Ada laporan belum sampai</option>
-                        <option value="cancelled">Dibatalkan</option>
-                    </select>
-                </label>
-                <button class="admin-order-expand-btn" id="adminOrderExpandButton" type="button" hidden>
-                    <i class="fa-solid fa-chevron-down"></i> Tampilkan lebih banyak
-                </button>
-            </div>
-            <div class="admin-database-table-wrap">
-                <table class="admin-database-table">
-                    <thead>
-                        <tr><th>Kode</th><th>Waktu</th><th>Nama</th><th>Pesanan</th><th>Alamat</th><th>Status</th><th>Pembayaran</th><th>Total</th><th>Aksi</th></tr>
-                    </thead>
-                    <tbody id="databaseOrdersList"><tr><td colspan="9">Belum ada data.</td></tr></tbody>
-                </table>
-            </div>
-        </div>
 
-        <div class="info-card">
-            <h3><i class="fa-solid fa-arrows-rotate"></i> Reset Data Uji Coba</h3>
-            <p style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Berguna sebelum bazar dibuka agar keranjang & review kembali ke kondisi awal.</p>
-            <div class="admin-reset-actions">
-                <button class="admin-reset-btn" type="button" onclick="adminResetCart()">
-                    <i class="fa-solid fa-basket-shopping"></i> Kosongkan Keranjang
-                </button>
-                <button class="admin-reset-btn" type="button" onclick="adminResetReviews()">
-                    <i class="fa-solid fa-rotate-left"></i> Reset Review ke Contoh
+            <div class="grid-3 admin-database-stats admin-stat-grid">
+                <div class="stat-box">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <div class="stat-number" id="dbTotalClicks">-</div>
+                    <div class="stat-label">Klik Link</div>
+                </div>
+                <div class="stat-box">
+                    <i class="fa-solid fa-receipt"></i>
+                    <div class="stat-number" id="dbTotalOrders">-</div>
+                    <div class="stat-label">Total Pesanan</div>
+                </div>
+                <button class="stat-box stat-link" type="button" onclick="openAdminSales()">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                    <div class="stat-number" id="dbTotalSales">-</div>
+                    <div class="stat-label">Total Penjualan</div>
+                    <span class="stat-action-hint">Lihat performa produk</span>
                 </button>
             </div>
-        </div>
 
-        <div class="info-card">
-            <h3><i class="fa-solid fa-circle-info"></i> Menu, Harga & Kontak</h3>
-            <p>Daftar menu, harga, dan nomor WhatsApp saat ini diatur langsung di <code>script.js</code>, sedangkan alamat dan kontak diatur di <code>alamat.html</code> dan <code>kontak.html</code>, sesuai catatan pada README proyek.</p>
+            <div class="admin-main-grid">
+                <div class="info-card admin-panel admin-panel-wide">
+                    <div class="admin-section-heading">
+                        <div>
+                            <span class="section-eyebrow">Pusat aktivitas</span>
+                            <h3><i class="fa-solid fa-database"></i> Data Pesanan</h3>
+                        </div>
+                        <span class="admin-live-label"><i class="fa-solid fa-circle"></i> Terhubung</span>
+                    </div>
+                    <p id="databaseStatus" class="admin-database-status">Memuat data Supabase...</p>
+                    <div class="admin-order-search">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="adminOrderSearch" type="search" placeholder="Cari kode pesanan atau nama pelanggan..." aria-label="Cari kode pesanan atau nama pelanggan" autocomplete="off">
+                    </div>
+                    <div class="admin-order-controls">
+                        <label class="admin-order-control">
+                            <span>Status</span>
+                            <select id="adminOrderStatusFilter" aria-label="Filter status pesanan">
+                                <option value="all">Semua pesanan</option>
+                                <option value="processing">Masih proses</option>
+                                <option value="completed">Sudah selesai</option>
+                                <option value="delivery_issue">Ada laporan belum sampai</option>
+                                <option value="cancelled">Dibatalkan</option>
+                            </select>
+                        </label>
+                        <button class="admin-order-expand-btn" id="adminOrderExpandButton" type="button" hidden>
+                            <i class="fa-solid fa-chevron-down"></i> Tampilkan lebih banyak
+                        </button>
+                    </div>
+                    <div class="admin-database-table-wrap">
+                        <table class="admin-database-table">
+                            <thead>
+                                <tr><th>Kode</th><th>Waktu</th><th>Nama</th><th>Pesanan</th><th>Alamat</th><th>Status</th><th>Pembayaran</th><th>Total</th><th>Aksi</th></tr>
+                            </thead>
+                            <tbody id="databaseOrdersList"><tr><td colspan="9">Belum ada data.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="admin-panel-stack">
+                    <div class="info-card admin-panel">
+                        <div class="admin-section-heading">
+                            <div>
+                                <span class="section-eyebrow">Masukan pelanggan</span>
+                                <h3><i class="fa-solid fa-message"></i> Kritik & Saran</h3>
+                            </div>
+                            <span class="admin-live-label"><i class="fa-solid fa-circle"></i> Terhubung</span>
+                        </div>
+                        <div id="adminDashboardFeedbackList" class="admin-feedback-list"></div>
+                    </div>
+
+                    <div class="info-card admin-panel">
+                        <h3><i class="fa-solid fa-arrows-rotate"></i> Reset Data Uji Coba</h3>
+                        <p style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">Berguna sebelum bazar dibuka agar keranjang & review kembali ke kondisi awal.</p>
+                        <div class="admin-reset-actions">
+                            <button class="admin-reset-btn" type="button" onclick="adminResetCart()">
+                                <i class="fa-solid fa-basket-shopping"></i> Kosongkan Keranjang
+                            </button>
+                            <button class="admin-reset-btn" type="button" onclick="adminResetReviews()">
+                                <i class="fa-solid fa-rotate-left"></i> Reset Review ke Contoh
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="info-card admin-panel">
+                        <h3><i class="fa-solid fa-circle-info"></i> Menu, Harga & Kontak</h3>
+                        <p>Daftar menu, harga, dan nomor WhatsApp saat ini diatur langsung di <code>script.js</code>, sedangkan alamat dan kontak diatur di <code>alamat.html</code> dan <code>kontak.html</code>, sesuai catatan pada README proyek.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
