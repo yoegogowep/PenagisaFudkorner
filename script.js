@@ -3,18 +3,17 @@ const NOMOR_WA_UMKM = "6282135783347";
 const THEME_KEY = "umkm_theme";
 const PURCHASED_PRODUCTS_KEY = "umkm_purchased_products";
 const USER_ORDERS_KEY = "umkm_user_orders";
+const COMMENT_LIKE_KEY = "umkm_liked_comments";
 const ORDER_STATUS_LABELS = {
     new: 'Menunggu konfirmasi',
     queued: 'Dalam antrian',
     preparing: 'Sedang dibuat',
-    waiting_courier: 'Menunggu kurir',
-    on_the_way: 'Dihantar',
     delivered: 'Sudah sampai',
     cancelled: 'Dibatalkan',
     confirmed: 'Dikonfirmasi',
     completed: 'Selesai'
 };
-const ORDER_STATUS_STEPS = ['new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered'];
+const ORDER_STATUS_STEPS = ['new', 'queued', 'preparing', 'delivered'];
 const DEFAULT_REVIEWS = [
     {
         name: "Ipul",
@@ -92,7 +91,11 @@ async function recordAudienceClick() {
 
 async function saveCommentToDatabase(comment) {
     if (!supabaseClient) return;
-    const { error } = await supabaseClient.from('comments').insert({ ...comment, status: 'pending' });
+    const { error } = await supabaseClient.from('comments').insert({
+        ...comment,
+        likes: Number(comment.likes || 0),
+        status: 'approved'
+    });
     if (error) console.error('Komentar gagal disimpan ke database:', error);
 }
 
@@ -117,11 +120,16 @@ async function loadCommentsFromDatabase() {
     if (!supabaseClient) return;
     const { data, error } = await supabaseClient
         .from('comments')
-        .select('name, food, rating, message')
+        .select('id, name, food, rating, message, likes, created_at')
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
     if (!error && data?.length) {
-        localStorage.setItem('umkm_reviews', JSON.stringify(data));
+        const normalized = data.map((comment) => ({
+            ...comment,
+            id: comment.id || `${comment.name}-${comment.food}-${comment.created_at || Date.now()}`,
+            likes: Number(comment.likes || 0)
+        }));
+        localStorage.setItem('umkm_reviews', JSON.stringify(normalized));
         renderReviews();
     }
 }
@@ -516,8 +524,7 @@ function addToCart(id) {
 }
 
 function showCartAddNotification(itemName, quantity) {
-    const existing = document.querySelector('.cart-add-notification');
-    if (existing) existing.remove();
+    const stackCount = document.querySelectorAll('.cart-add-notification').length;
 
     const notification = document.createElement('div');
     notification.className = 'cart-add-notification';
@@ -525,6 +532,7 @@ function showCartAddNotification(itemName, quantity) {
         <i class="fa-solid fa-circle-check"></i>
         <span>${itemName} masuk ke keranjang (${quantity}x)</span>
     `;
+    notification.style.bottom = `${116 + (stackCount * 56)}px`;
     document.body.appendChild(notification);
 
     setTimeout(() => {
@@ -641,7 +649,7 @@ function closeProductModal() {
     }, 200);
 }
 
-async function sendFeedbackToWhatsApp(event) {
+async function sendFeedbackToDatabase(event) {
     event.preventDefault();
 
     const name = document.getElementById('feedbackName').value.trim();
@@ -655,15 +663,14 @@ async function sendFeedbackToWhatsApp(event) {
 
     const feedback = { name, contact, message };
     const saved = await saveFeedbackToDatabase(feedback);
-
-    const text = `*KRITIK & SARAN - Penagisa Food Corner*\n\n*Nama:* ${name}\n*Kontak:* ${contact}\n*Pesan:*\n${message}`;
-    window.open(`https://wa.me/${NOMOR_WA_UMKM}?text=${encodeURIComponent(text)}`, '_blank');
     document.getElementById('feedbackForm').reset();
 
     if (saved && supabaseClient) {
         showInlineAlert('Kritik & saran berhasil dikirim dan tersimpan di database admin.');
+    } else if (supabaseClient) {
+        showInlineAlert('Kritik & saran gagal disimpan ke database. Silakan coba lagi.');
     } else {
-        showInlineAlert('Pesan terkirim via WhatsApp, tetapi penyimpanan database belum aktif.');
+        showInlineAlert('Koneksi database belum aktif, jadi kritik & saran belum tersimpan.');
     }
 }
 
@@ -677,6 +684,44 @@ function getReviewAverage(reviews) {
 function getCurrentReviews() {
     const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
     return storedReviews.length > 0 ? storedReviews : DEFAULT_REVIEWS;
+}
+
+function getLikedCommentIds() {
+    try {
+        return JSON.parse(localStorage.getItem(COMMENT_LIKE_KEY)) || [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function toggleLikeComment(commentId) {
+    if (!commentId) return;
+
+    const likedIds = getLikedCommentIds();
+    const alreadyLiked = likedIds.includes(String(commentId));
+    const nextLikedIds = alreadyLiked
+        ? likedIds.filter((id) => id !== String(commentId))
+        : [...likedIds, String(commentId)];
+    localStorage.setItem(COMMENT_LIKE_KEY, JSON.stringify(nextLikedIds));
+
+    const reviews = getCurrentReviews();
+    const review = reviews.find((item) => String(item.id || `${item.name}-${item.food}-${item.message}`) === String(commentId));
+    if (!review) return;
+
+    const currentLikes = Number(review.likes || 0);
+    review.likes = Math.max(0, currentLikes + (alreadyLiked ? -1 : 1));
+    localStorage.setItem('umkm_reviews', JSON.stringify(reviews));
+
+    if (supabaseClient && commentId) {
+        supabaseClient.from('comments')
+            .update({ likes: review.likes })
+            .eq('id', commentId)
+            .then(({ error }) => {
+                if (error) console.error('Like komentar gagal disimpan:', error);
+            });
+    }
+
+    renderReviews();
 }
 
 function syncRatings(reviews = getCurrentReviews()) {
@@ -727,6 +772,14 @@ function renderReviews(highlightLatest = false) {
     }
 
     reviews.forEach((review, index) => {
+        const reviewId = review.id || `${review.name}-${review.food}-${index}`;
+        const likedCommentIds = getLikedCommentIds();
+        const isLiked = likedCommentIds.includes(String(reviewId));
+        const normalizedReview = {
+            ...review,
+            id: reviewId,
+            likes: Number(review.likes || 0)
+        };
         const item = document.createElement('article');
         item.className = `review-item${highlightLatest && index === 0 ? ' is-new' : ''}`;
         item.innerHTML = `
@@ -735,13 +788,21 @@ function renderReviews(highlightLatest = false) {
                     <div class="review-item-name"></div>
                     <div class="review-item-food"></div>
                 </div>
-                <div class="review-item-stars" aria-label="${review.rating} dari 5 bintang">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div>
+                <div class="review-item-meta">
+                    <div class="review-item-stars" aria-label="${normalizedReview.rating} dari 5 bintang">${'★'.repeat(normalizedReview.rating)}${'☆'.repeat(5 - normalizedReview.rating)}</div>
+                    <button type="button" class="review-like-btn ${isLiked ? 'is-liked' : ''}" data-comment-id="${reviewId}" aria-label="Sukai komentar dari ${normalizedReview.name}">
+                        <i class="fa-solid fa-heart"></i>
+                        <span>${normalizedReview.likes}</span>
+                    </button>
+                </div>
             </div>
             <p class="review-item-message"></p>
         `;
-        item.querySelector('.review-item-name').textContent = review.name;
-        item.querySelector('.review-item-food').textContent = review.food;
-        item.querySelector('.review-item-message').textContent = review.message;
+        item.querySelector('.review-item-name').textContent = normalizedReview.name;
+        item.querySelector('.review-item-food').textContent = normalizedReview.food;
+        item.querySelector('.review-item-message').textContent = normalizedReview.message;
+        const likeButton = item.querySelector('.review-like-btn');
+        likeButton?.addEventListener('click', () => toggleLikeComment(reviewId));
         reviewList.appendChild(item);
     });
 }
@@ -799,10 +860,12 @@ function setupReviewForm() {
         }
 
         const comment = {
+            id: crypto.randomUUID ? crypto.randomUUID() : `review-${Date.now()}-${Math.random().toString(16).slice(2)}`,
             name: document.getElementById('reviewName').value.trim(),
             food: document.getElementById('reviewFood').value,
             rating,
-            message: document.getElementById('reviewMessage').value.trim()
+            message: document.getElementById('reviewMessage').value.trim(),
+            likes: 0
         };
         const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
         const reviews = storedReviews.length > 0 ? storedReviews : [...DEFAULT_REVIEWS];
@@ -1040,6 +1103,7 @@ function updateOrderTypeFields() {
     const addressGroup = document.getElementById("addressGroup");
     const addressLabel = document.getElementById("addressLabel");
     const custAddress = document.getElementById("custAddress");
+    const paymentMethod = document.getElementById('paymentMethod');
 
     if (!orderType || !addressGroup) return;
 
@@ -1052,6 +1116,13 @@ function updateOrderTypeFields() {
 
     if (custAddress) {
         custAddress.placeholder = isDelivery ? "Isi alamat rumah Anda" : "";
+    }
+
+    if (paymentMethod) {
+        paymentMethod.innerHTML = isDelivery
+            ? '<option value="">Pilih metode pembayaran</option><option value="QRIS">QRIS</option><option value="COD">COD / Bayar di tempat</option>'
+            : '<option value="Bayar di kasir">Bayar di kasir</option>';
+        paymentMethod.value = isDelivery ? paymentMethod.value || '' : 'Bayar di kasir';
     }
 }
 
@@ -1999,15 +2070,10 @@ document.addEventListener("DOMContentLoaded", () => {
     loadCommentsFromDatabase();
 
     const websiteQr = document.getElementById('websiteQr');
-    if (websiteQr && typeof QRCode !== 'undefined') {
-        new QRCode(websiteQr, {
-            text: getWebsiteLink(),
-            width: 144,
-            height: 144,
-            colorDark: '#1e272e',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.M
-        });
+    if (websiteQr) {
+        websiteQr.innerHTML = '<img src="QRweb.png" alt="QR code website Penagisa Food Corner" />';
+        websiteQr.style.setProperty('--qr-foreground', getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#8d1e3d');
+        websiteQr.style.setProperty('--qr-background', getComputedStyle(document.documentElement).getPropertyValue('--bg-white').trim() || '#ffffff');
     }
 
     const activeLink = document.querySelector('.nav-link.active');

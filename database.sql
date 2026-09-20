@@ -9,6 +9,7 @@ create table if not exists public.comments (
     food text not null check (char_length(trim(food)) between 1 and 100),
     rating smallint not null check (rating between 1 and 5),
     message text not null check (char_length(trim(message)) between 1 and 2000),
+    likes integer not null default 0 check (likes >= 0),
     status text not null default 'approved' check (status in ('pending', 'approved', 'rejected')),
     created_at timestamptz not null default now()
 );
@@ -40,7 +41,7 @@ create table if not exists public.sales_orders (
     order_type text not null check (order_type in ('Delivery', 'Takeaway')),
     address text,
     note text,
-    status text not null default 'new' check (status in ('new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered', 'confirmed', 'completed', 'cancelled')),
+    status text not null default 'new' check (status in ('new', 'queued', 'preparing', 'delivered', 'confirmed', 'completed', 'cancelled')),
     total_amount numeric(12, 2) not null default 0 check (total_amount >= 0),
     whatsapp_sent_at timestamptz,
     created_at timestamptz not null default now()
@@ -54,7 +55,7 @@ alter table public.sales_orders add column if not exists address text;
 alter table public.sales_orders add column if not exists delivery_confirmation text check (delivery_confirmation in ('received', 'not_received'));
 alter table public.sales_orders add column if not exists delivery_confirmation_at timestamptz;
 alter table public.sales_orders drop constraint if exists sales_orders_status_check;
-alter table public.sales_orders add constraint sales_orders_status_check check (status in ('new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered', 'confirmed', 'completed', 'cancelled'));
+alter table public.sales_orders add constraint sales_orders_status_check check (status in ('new', 'queued', 'preparing', 'delivered', 'confirmed', 'completed', 'cancelled'));
 
 create table if not exists public.sales_order_items (
     id uuid primary key default gen_random_uuid(),
@@ -105,16 +106,21 @@ select
     (select coalesce(sum(total_amount), 0) from public.sales_orders where status in ('confirmed', 'completed')) as total_sales,
     (select count(*) from public.sales_orders where status = 'new') as pending_orders;
 
--- Komentar publik boleh dikirim, tetapi hanya komentar approved yang boleh dibaca publik.
+-- Komentar publik langsung tampil tanpa menunggu persetujuan admin.
 alter table public.comments enable row level security;
 drop policy if exists "public can submit comments" on public.comments;
 create policy "public can submit comments"
     on public.comments for insert
-    with check (status = 'pending');
+    with check (status = 'approved');
 drop policy if exists "public can read approved comments" on public.comments;
 create policy "public can read approved comments"
     on public.comments for select
     using (status = 'approved');
+drop policy if exists "public can like comments" on public.comments;
+create policy "public can like comments"
+    on public.comments for update
+    using (status = 'approved')
+    with check (status = 'approved' and likes >= 0);
 
 -- Dashboard admin memakai gerbang admin di frontend untuk memoderasi komentar.
 drop policy if exists "admin dashboard can read comments" on public.comments;
@@ -175,7 +181,7 @@ create policy "admin can update sales orders"
     using (true)
     with check (
         payment_status in ('pending', 'awaiting_verification', 'paid', 'cod_confirmed')
-        and status in ('new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered', 'confirmed', 'completed', 'cancelled')
+        and status in ('new', 'queued', 'preparing', 'delivered', 'confirmed', 'completed', 'cancelled')
     );
 drop policy if exists "admin can delete sales orders" on public.sales_orders;
 create policy "admin can delete sales orders"
