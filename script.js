@@ -180,6 +180,33 @@ function cancelUserOrder(orderId) {
     return true;
 }
 
+async function confirmOrderDelivery(orderId, received) {
+    const orders = getUserLocalOrders();
+    const target = orders.find((order) => order.id === orderId);
+    if (!target) return;
+
+    target.delivery_confirmation = received ? 'received' : 'not_received';
+    if (received) target.status = 'completed';
+    saveUserLocalOrders(received ? orders.filter((order) => order.id !== orderId) : orders);
+
+    if (supabaseClient && !String(orderId).startsWith('local-')) {
+        const update = {
+            delivery_confirmation: received ? 'received' : 'not_received',
+            delivery_confirmation_at: new Date().toISOString()
+        };
+        if (received) update.status = 'completed';
+        const { error } = await supabaseClient.from('sales_orders').update(update).eq('id', orderId);
+        if (error) {
+            console.error('Konfirmasi penerimaan gagal disimpan:', error);
+            showInlineAlert('Konfirmasi belum tersimpan. Coba lagi.');
+            return;
+        }
+    }
+
+    renderMyOrdersInCart();
+    showInlineAlert(received ? 'Pesanan selesai. Terima kasih.' : 'Laporan belum sampai sudah diteruskan ke admin.');
+}
+
 function openPaymentProofModal(url) {
     const modal = document.getElementById('paymentProofPreviewModal');
     const image = document.getElementById('paymentProofPreviewImage');
@@ -838,6 +865,15 @@ function renderMyOrdersInCart() {
                 ${order.status !== 'cancelled' ? `<div class="order-progress" style="--progress-step:${progress}">${ORDER_STATUS_STEPS.map((step, index) => `<span class="order-progress-step ${index <= currentStep ? 'is-done' : ''}">${formatOrderStatus(step)}</span>`).join('')}</div>` : ''}
                 <div class="user-order-meta">Total: Rp ${Number(order.total_amount || 0).toLocaleString('id-ID')}</div>
                 <div class="user-order-items">${(order.items || []).map((item) => `${item.product_name} x${item.quantity}`).join(', ') || '-'}</div>
+                ${order.status === 'delivered' ? `
+                    <div class="delivery-confirmation">
+                        <strong>Apakah makanan sudah sampai?</strong>
+                        <div class="delivery-confirmation-actions">
+                            <button type="button" class="delivery-confirm-btn" data-order-id="${order.id}" data-received="true">Iya</button>
+                            <button type="button" class="delivery-confirm-btn delivery-confirm-btn-secondary" data-order-id="${order.id}" data-received="false">Tidak</button>
+                        </div>
+                    </div>
+                ` : ''}
                 <div class="user-order-actions">
                     ${order.payment_proof_url ? `<button type="button" class="proof-preview-btn" data-proof-url="${order.payment_proof_url}">Lihat bukti</button>` : ''}
                     ${canCancel ? `<button type="button" class="cancel-order-btn" data-order-id="${order.id}">Batalkan</button>` : ''}
@@ -851,6 +887,9 @@ function renderMyOrdersInCart() {
     });
     historyList.querySelectorAll('.cancel-order-btn').forEach((button) => {
         button.addEventListener('click', () => cancelUserOrder(button.dataset.orderId));
+    });
+    historyList.querySelectorAll('.delivery-confirm-btn').forEach((button) => {
+        button.addEventListener('click', () => confirmOrderDelivery(button.dataset.orderId, button.dataset.received === 'true'));
     });
 }
 
@@ -1638,7 +1677,7 @@ async function loadAdminDatabaseData() {
 
     const [dashboardResult, ordersResult, menuSalesResult] = await Promise.all([
         supabaseClient.from('admin_dashboard').select('*').single(),
-        supabaseClient.from('sales_orders').select('id, created_at, customer_name, order_type, address, status, payment_method, payment_status, payment_proof_url, total_amount').order('created_at', { ascending: false }).limit(1000),
+        supabaseClient.from('sales_orders').select('id, created_at, customer_name, order_type, address, status, delivery_confirmation, payment_method, payment_status, payment_proof_url, total_amount').order('created_at', { ascending: false }).limit(1000),
         supabaseClient.from('menu_sales_summary').select('product_name, total_quantity, total_sales').order('total_sales', { ascending: false })
     ]);
 
@@ -1659,6 +1698,7 @@ async function loadAdminDatabaseData() {
     });
     const filteredOrders = searchedOrders.filter((order) => {
         if (adminOrderStatusFilter === 'completed') return ['delivered', 'completed'].includes(order.status);
+        if (adminOrderStatusFilter === 'delivery_issue') return order.delivery_confirmation === 'not_received';
         if (adminOrderStatusFilter === 'cancelled') return order.status === 'cancelled';
         if (adminOrderStatusFilter === 'processing') return !['delivered', 'completed', 'cancelled'].includes(order.status);
         return true;
@@ -1699,6 +1739,12 @@ async function loadAdminDatabaseData() {
             row.appendChild(cell);
         });
         const statusCell = document.createElement('td');
+        if (order.delivery_confirmation === 'not_received') {
+            const issueLabel = document.createElement('strong');
+            issueLabel.className = 'admin-delivery-issue';
+            issueLabel.textContent = 'Belum sampai';
+            statusCell.appendChild(issueLabel);
+        }
         const statusSelect = document.createElement('select');
         statusSelect.className = 'admin-order-status-select';
         ORDER_STATUS_STEPS.concat(['confirmed', 'completed', 'cancelled']).forEach((statusValue) => {

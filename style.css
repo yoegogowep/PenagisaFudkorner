@@ -2639,6 +2639,42 @@ header {
 .status-pill.status-cancelled { background: #fce9e9; color: #a43737; }
 .user-order-actions { justify-content: flex-start; margin-top: 10px; }
 
+.delivery-confirmation {
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--primary-tint);
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    border-radius: 10px;
+}
+
+.delivery-confirmation-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.delivery-confirm-btn {
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 16px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.delivery-confirm-btn-secondary {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+}
+
+.admin-delivery-issue {
+    display: block;
+    margin-bottom: 6px;
+    color: #b42318;
+}
+
 .proof-preview-btn,
 .cancel-order-btn {
     padding: 7px 10px;

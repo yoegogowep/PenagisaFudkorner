@@ -42,6 +42,8 @@ alter table public.sales_orders add column if not exists payment_status text not
 alter table public.sales_orders add column if not exists payment_confirmed_at timestamptz;
 alter table public.sales_orders add column if not exists payment_proof_url text;
 alter table public.sales_orders add column if not exists address text;
+alter table public.sales_orders add column if not exists delivery_confirmation text check (delivery_confirmation in ('received', 'not_received'));
+alter table public.sales_orders add column if not exists delivery_confirmation_at timestamptz;
 alter table public.sales_orders drop constraint if exists sales_orders_status_check;
 alter table public.sales_orders add constraint sales_orders_status_check check (status in ('new', 'queued', 'preparing', 'waiting_courier', 'on_the_way', 'delivered', 'confirmed', 'completed', 'cancelled'));
 
