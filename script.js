@@ -206,6 +206,45 @@ function cancelUserOrder(orderId) {
     return true;
 }
 
+function deleteUserOrder(orderId) {
+    const orders = getUserLocalOrders();
+    const targetIndex = orders.findIndex((order) => order.id === orderId);
+    if (targetIndex === -1) return false;
+
+    const target = orders[targetIndex];
+    const allowedStatuses = ['delivered', 'completed', 'cancelled'];
+    if (!allowedStatuses.includes(target.status)) {
+        showInlineAlert('Pesanan hanya bisa dihapus setelah sampai atau dibatalkan.');
+        return false;
+    }
+
+    const removeFromLocalList = () => {
+        orders.splice(targetIndex, 1);
+        saveUserLocalOrders(orders);
+        renderMyOrdersInCart();
+        showInlineAlert('Pesanan berhasil dihapus.');
+    };
+
+    const isDatabaseOrder = supabaseClient
+        && !String(orderId).startsWith('local-')
+        && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(String(orderId));
+
+    if (isDatabaseOrder) {
+        supabaseClient.from('sales_orders').delete().eq('id', orderId).then(({ error }) => {
+            if (error) {
+                console.error('Gagal menghapus pesanan di database:', error);
+                showInlineAlert('Pesanan gagal dihapus dari database.');
+                return;
+            }
+            removeFromLocalList();
+        });
+        return true;
+    }
+
+    removeFromLocalList();
+    return true;
+}
+
 async function confirmOrderDelivery(orderId, received) {
     const orders = getUserLocalOrders();
     const target = orders.find((order) => order.id === orderId);
@@ -958,6 +997,7 @@ function renderMyOrdersInCart() {
                 <div class="user-order-actions">
                     ${order.payment_proof_url ? `<button type="button" class="proof-preview-btn" data-proof-url="${order.payment_proof_url}">Lihat bukti</button>` : ''}
                     ${canCancel ? `<button type="button" class="cancel-order-btn" data-order-id="${order.id}">Batalkan</button>` : ''}
+                    ${['delivered', 'completed', 'cancelled'].includes(order.status) ? `<button type="button" class="cancel-order-btn delete-order-btn" data-order-id="${order.id}">Hapus</button>` : ''}
                 </div>
             </div>
         `;
@@ -967,7 +1007,9 @@ function renderMyOrdersInCart() {
         button.addEventListener('click', () => openPaymentProofModal(button.dataset.proofUrl));
     });
     historyList.querySelectorAll('.cancel-order-btn').forEach((button) => {
-        button.addEventListener('click', () => cancelUserOrder(button.dataset.orderId));
+        const orderId = button.dataset.orderId;
+        const isDeleteButton = button.classList.contains('delete-order-btn');
+        button.addEventListener('click', () => isDeleteButton ? deleteUserOrder(orderId) : cancelUserOrder(orderId));
     });
     historyList.querySelectorAll('.delivery-confirm-btn').forEach((button) => {
         button.addEventListener('click', () => confirmOrderDelivery(button.dataset.orderId, button.dataset.received === 'true'));
@@ -2210,9 +2252,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (gate && !sessionStorage.getItem('umkm_gate_shown')) {
         sessionStorage.setItem('umkm_gate_shown', 'true');
-        gate.classList.remove('is-hidden');
-        document.body.classList.add('gate-open');
-        startMenuIntro(gate);
+        window.setTimeout(() => {
+            gate.classList.remove('is-hidden');
+            document.body.classList.add('gate-open');
+            startMenuIntro(gate);
+        }, 500);
     } else if (gate) {
         gate.classList.add('is-hidden');
         document.body.classList.remove('gate-open');

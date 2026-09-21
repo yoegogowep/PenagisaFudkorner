@@ -191,6 +191,10 @@ drop policy if exists "admin can delete sales orders" on public.sales_orders;
 create policy "admin can delete sales orders"
     on public.sales_orders for delete
     using (true);
+drop policy if exists "public can delete final sales orders" on public.sales_orders;
+create policy "public can delete final sales orders"
+    on public.sales_orders for delete
+    using (status in ('delivered', 'completed', 'cancelled'));
 
 alter table public.sales_order_items enable row level security;
 drop policy if exists "public can submit order items" on public.sales_order_items;
