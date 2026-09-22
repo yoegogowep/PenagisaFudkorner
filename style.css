@@ -4634,6 +4634,17 @@ button.clear-cart-btn {
         padding-bottom: 0 !important;
     }
 
+    :root[data-theme="dark"] #cartModal .modal-header h3,
+    :root[data-theme="dark"] #cartModal .clear-cart-btn,
+    :root[data-theme="dark"] #cartModal .modal-header > button,
+    :root[data-theme="dark"] #cartModal .modal-header > button i {
+        color: var(--text-dark) !important;
+    }
+
+    :root[data-theme="dark"] #cartModal .clear-cart-btn {
+        color: var(--primary-hover) !important;
+    }
+
     header {
         max-width: 100vw;
     }
