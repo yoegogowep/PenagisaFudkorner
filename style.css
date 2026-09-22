@@ -216,8 +216,8 @@ html {
 body {
     position: relative;
     background:
-        radial-gradient(circle at top, rgba(var(--primary-rgb), 0.12), transparent 26%),
-        linear-gradient(180deg, var(--bg-white) 0%, rgba(var(--primary-rgb), 0.02) 100%);
+        radial-gradient(circle at top, rgba(var(--primary-rgb), 0.18), transparent 24%),
+        linear-gradient(180deg, #f4f9ff 0%, #f9fbff 34%, rgba(var(--primary-rgb), 0.04) 100%);
     color: var(--text-dark);
     padding-bottom: 0;
     padding-top: 64px;
@@ -231,7 +231,7 @@ body::before {
     width: 380px;
     height: 380px;
     border-radius: 50%;
-    background: rgba(var(--primary-rgb), 0.09);
+    background: rgba(var(--primary-rgb), 0.14);
     filter: blur(60px);
     pointer-events: none;
     z-index: 0;
@@ -606,6 +606,14 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+@media (min-width: 600px) {
+    .nav-container {
+        max-width: 1100px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
 }
 
 .logo {
@@ -1045,6 +1053,7 @@ header {
     overflow: hidden;
     display: grid;
     grid-template-columns: 1.05fr 0.95fr;
+    gap: 22px;
     z-index: 1;
     box-shadow: 0 28px 70px rgba(15, 23, 42, 0.35);
     animation: modalIn 0.25s ease both;
@@ -1082,7 +1091,12 @@ header {
 .product-gallery {
     position: relative;
     height: 480px;
-    background: #f3f4f6;
+    background: linear-gradient(135deg, #f8f4f5, #f2f4f7);
+    border: 1px solid rgba(var(--primary-rgb), 0.08);
+    border-radius: 18px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+    padding: 10px;
+    margin: 22px 0 22px 22px;
 }
 
 .product-main-image {
@@ -1090,6 +1104,9 @@ header {
     height: 100%;
     object-fit: cover;
     display: block;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.04);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
 }
 
 .gallery-nav {
@@ -1141,7 +1158,7 @@ header {
 }
 
 .product-details {
-    padding: 66px 24px 22px;
+    padding: 66px 24px 22px 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1220,6 +1237,102 @@ header {
     color: var(--text-dark);
 }
 
+.product-review-box {
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 18px;
+    padding: 14px 15px;
+}
+
+.product-review-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.product-review-header h4 {
+    font-size: 14px;
+    margin: 0;
+}
+
+.product-review-average {
+    color: var(--primary);
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.product-review-summary {
+    align-items: center;
+    color: var(--text-muted);
+    display: flex;
+    font-size: 11px;
+    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.product-review-stars {
+    color: #e4a11b;
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.product-review-list {
+    display: grid;
+    gap: 10px;
+    max-height: 72px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 6px;
+    scrollbar-width: thin;
+}
+
+.product-review-item {
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+}
+
+.product-review-item:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.product-review-item-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.product-review-item-name {
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.product-review-item-stars {
+    color: #e4a11b;
+    font-size: 10px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.product-review-item-message {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.product-review-empty {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin: 4px 0 0;
+}
+
 .product-add-btn {
     border: 1px solid var(--primary);
     border-radius: 16px;
@@ -1237,10 +1350,16 @@ header {
 @media (max-width: 768px) {
     .product-modal-content {
         grid-template-columns: 1fr;
+        gap: 0;
     }
 
     .product-gallery {
         height: 300px;
+        margin: 16px 16px 0;
+    }
+
+    .product-details {
+        padding: 18px 16px 20px;
     }
 }
 
@@ -4401,6 +4520,7 @@ header {
     padding: 14px 18px;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 16px;
     border-radius: 42px;
     background: linear-gradient(180deg, rgba(var(--primary-rgb), 0.12), rgba(var(--primary-rgb), 0.04));
@@ -4409,21 +4529,23 @@ header {
 }
 
 .home-order-field {
-    flex: 1;
+    flex: 1.5 1 0;
     min-width: 0;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 16px;
+    padding: 16px 18px;
     border-radius: 28px;
     background: var(--bg-white);
     color: var(--text-muted);
     font-size: 12px;
+    min-height: 54px;
 }
 
 .home-search-form {
     border: 0;
     margin: 0;
+    flex: 2.1 1 0;
 }
 
 .home-search-form input {
@@ -5606,6 +5728,35 @@ header {
     gap: 48px;
 }
 
+@keyframes galeriSetIn {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes galeriPhotoReveal {
+    from {
+        opacity: 0;
+        transform: scale(1.08);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.galeri-set {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+    animation: galeriSetIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--set-delay, 0) * 0.06s);
+}
+
 .galeri-set[hidden] {
     display: none;
 }
@@ -5734,12 +5885,15 @@ header {
     object-fit: cover;
     opacity: 0;
     position: absolute;
+    transform: scale(1.08);
     transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     width: 100%;
 }
 
 .galeri-photo img.is-loaded {
     opacity: 1;
+    animation: galeriPhotoReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--photo-delay, 0) * 0.08s);
 }
 
 @media (hover: hover) {
@@ -6273,12 +6427,12 @@ body.galeri-lock {
         min-height: 58px;
         gap: 6px;
         justify-content: space-between;
-        padding-inline: 10px;
+        padding-inline: 14px;
     }
 
     .nav-hamburger {
         order: 1;
-        margin-right: 0;
+        margin-right: 8px;
         flex-shrink: 0;
     }
 
@@ -6288,7 +6442,8 @@ body.galeri-lock {
         flex: 1 1 auto;
         min-width: 0;
         font-size: 14px;
-        justify-content: center;
+        justify-content: flex-start;
+        text-align: left;
     }
 
     .cart-icon-btn,

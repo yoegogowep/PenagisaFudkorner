@@ -17,7 +17,7 @@ const ORDER_STATUS_STEPS = ['new', 'queued', 'preparing', 'delivered'];
 const DEFAULT_REVIEWS = [
     {
         name: "Ipul",
-        food: "Gyoza Kuah",
+        food: "Gyoza",
         rating: 5,
         message: "Kuahnya gurih, gyozanya lembut, dan porsinya pas untuk makan siang."
     },
@@ -35,7 +35,7 @@ const DEFAULT_REVIEWS = [
     },
     {
         name: "Titto",
-        food: "Cilok Clasik",
+        food: "Cilok",
         rating: 5,
         message: "Rasanya sederhana tapi enak, apalagi dimakan selagi hangat."
     }
@@ -382,7 +382,7 @@ const menuItems = [
     },
     {
         id: 2,
-        name: "Gyoza Kuah",
+        name: "Gyoza",
         category: "makanan",
         price: 5000,
         rating: 4.9,
@@ -399,7 +399,7 @@ const menuItems = [
 
     {
         id: 4,
-        name: "Cilok Clasik",
+        name: "Cilok",
         category: "makanan",
         price: 5000,
         rating: 4.8,
@@ -639,8 +639,14 @@ function openProductModal(itemId) {
     modal.querySelector('.product-desc').textContent = item.desc;
     modal.querySelector('.product-highlight').textContent = item.highlight;
 
+    const reviewBox = document.getElementById('productReviewBox');
+    if (reviewBox) {
+        reviewBox.style.display = item.comingSoon ? 'none' : 'block';
+    }
+
     const list = modal.querySelector('.ingredient-list');
     list.innerHTML = item.ingredients.map(i => `<li>${i}</li>`).join('');
+    renderProductReviews(item.name);
 
     const prevBtn = modal.querySelector('.gallery-prev');
     const nextBtn = modal.querySelector('.gallery-next');
@@ -723,6 +729,58 @@ function getReviewAverage(reviews) {
 function getCurrentReviews() {
     const storedReviews = JSON.parse(localStorage.getItem('umkm_reviews')) || [];
     return storedReviews.length > 0 ? storedReviews : DEFAULT_REVIEWS;
+}
+
+function getProductReviews(productName) {
+    const normalizedName = String(productName || '').trim();
+    if (!normalizedName) return [];
+
+    return getCurrentReviews().filter((review) => String(review.food || '').trim() === normalizedName);
+}
+
+function renderProductReviews(productName) {
+    const reviewBox = document.getElementById('productReviewBox');
+    const averageEl = document.getElementById('productReviewAverage');
+    const starsEl = document.getElementById('productReviewStars');
+    const countEl = document.getElementById('productReviewCount');
+    const listEl = document.getElementById('productReviewList');
+
+    if (!reviewBox || !averageEl || !starsEl || !countEl || !listEl) return;
+
+    const item = menuItems.find((menuItem) => menuItem.name === productName);
+    if (!item || item.comingSoon) {
+        reviewBox.style.display = 'none';
+        return;
+    }
+
+    const productReviews = getProductReviews(productName);
+    const averageRating = productReviews.length ? getReviewAverage(productReviews) : 0;
+
+    reviewBox.style.display = 'block';
+    averageEl.textContent = productReviews.length ? averageRating.toFixed(1) : '0.0';
+    const filledStars = productReviews.length ? Math.round(averageRating) : 0;
+    starsEl.textContent = '★'.repeat(filledStars) + '☆'.repeat(5 - filledStars);
+    countEl.textContent = `${productReviews.length} ulasan`;
+
+    if (!productReviews.length) {
+        listEl.innerHTML = '<p class="product-review-empty">Belum ada review untuk produk ini.</p>';
+        return;
+    }
+
+    listEl.innerHTML = productReviews.map((review) => {
+        const rating = Number(review.rating || 0);
+        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        return `
+            <div class="product-review-item">
+                <div class="product-review-item-header">
+                    <span class="product-review-item-name">${(review.name || 'Pelanggan').replace(/[<>]/g, '')}</span>
+                    <span class="product-review-item-stars" aria-label="${rating} dari 5 bintang">${stars}</span>
+                </div>
+                <p class="product-review-item-message">${(review.message || '').replace(/[<>]/g, '')}</p>
+            </div>
+        `;
+    }).join('');
+
 }
 
 function getLikedCommentIds() {
@@ -2383,12 +2441,20 @@ function setupGalleryPage() {
         let visibleSets = 0;
         let visiblePhotos = 0;
 
-        sets.forEach((set) => {
+        sets.forEach((set, index) => {
             const show = activeMenu === 'semua' || set.dataset.menuId === activeMenu;
             set.hidden = !show;
+            set.style.setProperty('--set-delay', String(index));
             if (show) {
                 visibleSets += 1;
                 visiblePhotos += set.querySelectorAll('.galeri-photo').length;
+                requestAnimationFrame(() => {
+                    set.style.opacity = '1';
+                    set.style.transform = 'translateY(0) scale(1)';
+                });
+            } else {
+                set.style.opacity = '0';
+                set.style.transform = 'translateY(18px) scale(0.98)';
             }
         });
 
@@ -2413,6 +2479,7 @@ function setupGalleryPage() {
         button.type = 'button';
         button.className = 'galeri-photo';
         button.setAttribute('aria-haspopup', 'dialog');
+        button.style.setProperty('--photo-delay', String(photoIndex));
 
         const img = new Image();
         img.alt = `${item.name}, foto ${photoIndex + 1}`;
@@ -2439,6 +2506,7 @@ function setupGalleryPage() {
         set.className = index % 2 === 1 ? 'galeri-set is-flipped' : 'galeri-set';
         set.dataset.category = item.category;
         set.dataset.menuId = String(item.id);
+        set.style.setProperty('--set-delay', String(index));
 
         const headingId = `galeriNama${item.id}`;
         set.setAttribute('aria-labelledby', headingId);
