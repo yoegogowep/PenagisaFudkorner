@@ -71,12 +71,27 @@ create table if not exists public.sales_order_items (
     subtotal numeric(12, 2) generated always as (quantity * unit_price) stored
 );
 
+create table if not exists public.order_refunds (
+    id uuid primary key default gen_random_uuid(),
+    order_id uuid not null references public.sales_orders(id) on delete cascade,
+    customer_name text not null check (char_length(trim(customer_name)) between 1 and 100),
+    refund_reason text not null check (char_length(trim(refund_reason)) between 1 and 2000),
+    refund_total numeric(12, 2) not null default 0 check (refund_total >= 0),
+    attachment_url text,
+    status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+    admin_note text,
+    created_at timestamptz not null default now(),
+    reviewed_at timestamptz
+);
+
 create index if not exists comments_created_at_idx on public.comments (created_at desc);
 create index if not exists feedback_messages_created_at_idx on public.feedback_messages (created_at desc);
 create index if not exists link_clicks_clicked_at_idx on public.link_clicks (clicked_at desc);
 create index if not exists sales_orders_created_at_idx on public.sales_orders (created_at desc);
 create index if not exists sales_orders_status_idx on public.sales_orders (status);
 create index if not exists sales_order_items_order_id_idx on public.sales_order_items (order_id);
+create index if not exists order_refunds_order_id_idx on public.order_refunds (order_id);
+create index if not exists order_refunds_status_idx on public.order_refunds (status);
 
 create or replace view public.menu_sales_summary as
 select
@@ -89,7 +104,8 @@ where so.status <> 'cancelled'
 group by soi.product_name;
 
 insert into storage.buckets (id, name, public)
-values ('payment-proofs', 'payment-proofs', true)
+values ('payment-proofs', 'payment-proofs', true),
+       ('refund-attachments', 'refund-attachments', true)
 on conflict (id) do update set public = true;
 
 drop policy if exists "public can upload payment proofs" on storage.objects;
@@ -100,6 +116,14 @@ drop policy if exists "public can read payment proofs" on storage.objects;
 create policy "public can read payment proofs"
     on storage.objects for select
     using (bucket_id = 'payment-proofs');
+drop policy if exists "public can upload refund attachments" on storage.objects;
+create policy "public can upload refund attachments"
+    on storage.objects for insert
+    with check (bucket_id = 'refund-attachments');
+drop policy if exists "public can read refund attachments" on storage.objects;
+create policy "public can read refund attachments"
+    on storage.objects for select
+    using (bucket_id = 'refund-attachments');
 
 create or replace view public.admin_dashboard as
 select
@@ -205,6 +229,21 @@ drop policy if exists "public can read order items" on public.sales_order_items;
 create policy "public can read order items"
     on public.sales_order_items for select
     using (true);
+
+alter table public.order_refunds enable row level security;
+drop policy if exists "public can submit order refund requests" on public.order_refunds;
+create policy "public can submit order refund requests"
+    on public.order_refunds for insert
+    with check (true);
+drop policy if exists "public can read order refund requests" on public.order_refunds;
+create policy "public can read order refund requests"
+    on public.order_refunds for select
+    using (true);
+drop policy if exists "admin can update order refund requests" on public.order_refunds;
+create policy "admin can update order refund requests"
+    on public.order_refunds for update
+    using (true)
+    with check (status in ('pending', 'approved', 'rejected'));
 
 -- Aktifkan policy SELECT/UPDATE/DELETE untuk role admin/authenticated sesuai
 -- sistem login yang dipakai saat frontend mulai membaca dashboard ini.

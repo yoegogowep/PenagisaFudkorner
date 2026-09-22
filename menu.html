@@ -134,16 +134,79 @@
                 <h3 style="font-size:18px;"><i class="fa-solid fa-route"></i> Status Pesanan</h3>
                 <button class="order-status-close" type="button" onclick="closeOrderStatus()" aria-label="Tutup status pesanan"><i class="fa-solid fa-xmark"></i></button>
             </div>
+            <section class="user-order-history" aria-labelledby="userOrderStatusTitle">
+                <div class="user-order-history-heading">
+                    <div>
+                        <span class="section-eyebrow">Pelacakan</span>
+                        <h3 id="userOrderStatusTitle">Pesanan aktif</h3>
+                    </div>
+                    <i class="fa-solid fa-route" aria-hidden="true"></i>
+                </div>
+                <div id="userOrderStatusList"></div>
+            </section>
+        </div>
+    </div>
+
+    <div class="modal-overlay order-status-modal" id="orderHistoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size:18px;"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Pesanan</h3>
+                <button class="order-status-close" type="button" onclick="closeOrderHistory()" aria-label="Tutup riwayat pesanan"><i class="fa-solid fa-xmark"></i></button>
+            </div>
             <section class="user-order-history" aria-labelledby="userOrderHistoryTitle">
                 <div class="user-order-history-heading">
                     <div>
                         <span class="section-eyebrow">Pelacakan</span>
-                        <h3 id="userOrderHistoryTitle">Pesanan saya</h3>
+                        <h3 id="userOrderHistoryTitle">Riwayat pesanan selesai</h3>
                     </div>
-                    <i class="fa-solid fa-route" aria-hidden="true"></i>
+                    <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
                 </div>
                 <div id="userOrderHistoryList"></div>
             </section>
+        </div>
+    </div>
+
+    <div class="refund-request-modal" id="refundRequestModal" aria-hidden="true">
+        <div class="refund-request-backdrop" onclick="closeRefundRequestModal()"></div>
+        <div class="refund-request-dialog" role="dialog" aria-modal="true" aria-labelledby="refundRequestTitle">
+            <button class="payment-modal-close" type="button" onclick="closeRefundRequestModal()" aria-label="Tutup formulir refund"><i class="fa-solid fa-xmark"></i></button>
+            <span class="payment-modal-kicker">Refund pesanan</span>
+            <h3 id="refundRequestTitle">Ajukan refund</h3>
+            <p class="refund-request-summary">Pesanan yang sudah selesai bisa direfund apabila ada masalah seperti makanan rusak atau kurang sesuai.</p>
+            <input id="refundOrderId" type="hidden">
+            <div class="refund-request-meta">
+                <div>
+                    <span class="refund-request-label">Kode pesanan</span>
+                    <strong id="refundOrderCode">-</strong>
+                </div>
+                <div>
+                    <span class="refund-request-label">Total pesanan</span>
+                    <strong id="refundOrderTotal">Rp 0</strong>
+                </div>
+            </div>
+            <p id="refundOrderInfo" class="refund-order-info">-</p>
+            <div class="refund-request-form">
+                <label>
+                    <span>Foto makanan</span>
+                    <label class="payment-proof-upload refund-proof-upload">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span id="refundAttachmentFileName">Pilih foto makanan yang rusak/kurang sesuai</span>
+                        <input id="refundAttachmentInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="handleRefundAttachmentSelected(event)">
+                    </label>
+                </label>
+                <label>
+                    <span>Alasan refund</span>
+                    <textarea id="refundReason" rows="4" placeholder="Contoh: makanan datang dalam kondisi tidak sesuai, rasa kurang, atau kualitas tidak seperti yang dijanjikan."></textarea>
+                </label>
+                <label>
+                    <span>Total refund yang diminta</span>
+                    <input id="refundAmount" type="number" min="1000" step="1000" placeholder="Masukkan total refund">
+                </label>
+            </div>
+            <div class="refund-request-actions">
+                <button type="button" class="payment-secondary-btn" onclick="closeRefundRequestModal()">Batal</button>
+                <button type="button" class="wa-submit-btn" onclick="submitRefundRequest()">Kirim permintaan</button>
+            </div>
         </div>
     </div>
 

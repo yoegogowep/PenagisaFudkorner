@@ -3,6 +3,7 @@ const NOMOR_WA_UMKM = "6282135783347";
 const THEME_KEY = "umkm_theme";
 const PURCHASED_PRODUCTS_KEY = "umkm_purchased_products";
 const USER_ORDERS_KEY = "umkm_user_orders";
+const REFUND_REQUESTS_KEY = "umkm_refund_requests";
 const COMMENT_LIKE_KEY = "umkm_liked_comments";
 const ORDER_STATUS_LABELS = {
     new: 'Menunggu konfirmasi',
@@ -116,6 +117,42 @@ async function saveFeedbackToDatabase(feedback) {
     return true;
 }
 
+async function saveRefundRequestToDatabase(refund) {
+    const payload = {
+        order_id: refund.order_id,
+        customer_name: refund.customer_name || 'Pelanggan',
+        refund_reason: refund.refund_reason,
+        refund_total: Number(refund.refund_total || 0),
+        attachment_url: refund.attachment_url || null,
+        status: 'pending',
+        admin_note: null,
+        created_at: new Date().toISOString(),
+        reviewed_at: null
+    };
+
+    if (!supabaseClient) {
+        const stored = JSON.parse(localStorage.getItem(REFUND_REQUESTS_KEY) || '[]');
+        const record = {
+            id: `local-refund-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+            ...payload,
+            created_at: payload.created_at,
+            reviewed_at: null,
+            status: 'pending'
+        };
+        stored.unshift(record);
+        localStorage.setItem(REFUND_REQUESTS_KEY, JSON.stringify(stored));
+        return record;
+    }
+
+    const { data, error } = await supabaseClient.from('order_refunds').insert(payload).select('id').single();
+    if (error || !data) {
+        console.error('Permintaan refund gagal disimpan:', error);
+        return false;
+    }
+
+    return { id: data.id, ...payload };
+}
+
 async function loadCommentsFromDatabase() {
     if (!supabaseClient) return;
     const { data, error } = await supabaseClient
@@ -159,6 +196,18 @@ function getUserLocalOrders() {
 
 function saveUserLocalOrders(orders) {
     localStorage.setItem(USER_ORDERS_KEY, JSON.stringify(orders));
+}
+
+function getRefundRequestsLocal() {
+    try {
+        return JSON.parse(localStorage.getItem(REFUND_REQUESTS_KEY)) || [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function isOrderCompletedStatus(status) {
+    return ['completed', 'delivered'].includes(status);
 }
 
 function formatOrderStatus(status) {
@@ -213,7 +262,7 @@ function deleteUserOrder(orderId) {
 
     const target = orders[targetIndex];
     const allowedStatuses = ['delivered', 'completed', 'cancelled'];
-    if (!allowedStatuses.includes(target.status)) {
+    if (!allowedStatuses.includes(target.status) && !isOrderCompletedStatus(target.status)) {
         showInlineAlert('Pesanan hanya bisa dihapus setelah sampai atau dibatalkan.');
         return false;
     }
@@ -252,7 +301,7 @@ async function confirmOrderDelivery(orderId, received) {
 
     target.delivery_confirmation = received ? 'received' : 'not_received';
     if (received) target.status = 'completed';
-    saveUserLocalOrders(received ? orders.filter((order) => order.id !== orderId) : orders);
+    saveUserLocalOrders(orders);
 
     if (supabaseClient && !String(orderId).startsWith('local-')) {
         const update = {
@@ -290,10 +339,129 @@ function closePaymentProofModal() {
     modal.setAttribute('aria-hidden', 'true');
 }
 
+let activeRefundOrderId = null;
+let refundAttachmentFile = null;
+
+function closeRefundRequestModal() {
+    const modal = document.getElementById('refundRequestModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    activeRefundOrderId = null;
+    refundAttachmentFile = null;
+    const input = document.getElementById('refundAttachmentInput');
+    const fileName = document.getElementById('refundAttachmentFileName');
+    if (input) input.value = '';
+    if (fileName) fileName.textContent = 'Pilih foto makanan yang rusak/kurang sesuai';
+    const reasonInput = document.getElementById('refundReason');
+    const totalInput = document.getElementById('refundAmount');
+    if (reasonInput) reasonInput.value = '';
+    if (totalInput) totalInput.value = '';
+}
+
+function openRefundRequestModal(orderId) {
+    const modal = document.getElementById('refundRequestModal');
+    if (!modal) return;
+    const targetOrder = getUserLocalOrders().find((order) => order.id === orderId);
+    if (!targetOrder) return;
+    activeRefundOrderId = orderId;
+    const orderIdField = document.getElementById('refundOrderId');
+    const orderCode = document.getElementById('refundOrderCode');
+    const orderTotal = document.getElementById('refundOrderTotal');
+    const orderInfo = document.getElementById('refundOrderInfo');
+    if (orderIdField) orderIdField.value = orderId;
+    if (orderCode) orderCode.textContent = `Kode pesanan #${String(orderId).slice(0, 8).toUpperCase()}`;
+    if (orderTotal) orderTotal.textContent = `Rp ${Number(targetOrder.total_amount || 0).toLocaleString('id-ID')}`;
+    if (orderInfo) orderInfo.textContent = `${targetOrder.order_type === 'Takeaway' ? 'Ambil sendiri' : 'Diantar'} • ${targetOrder.items?.map((item) => `${item.product_name} x${item.quantity}`).join(', ') || 'Pesanan'}`;
+    const amountInput = document.getElementById('refundAmount');
+    if (amountInput) amountInput.value = Number(targetOrder.total_amount || 0);
+    const fileName = document.getElementById('refundAttachmentFileName');
+    if (fileName) fileName.textContent = 'Pilih foto makanan yang rusak/kurang sesuai';
+    refundAttachmentFile = null;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function handleRefundAttachmentSelected(event) {
+    const file = event.target.files?.[0];
+    const fileName = document.getElementById('refundAttachmentFileName');
+    if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
+        event.target.value = '';
+        refundAttachmentFile = null;
+        showInlineAlert('Pilih foto JPG, PNG, atau WEBP dengan ukuran maksimal 5 MB.');
+        return;
+    }
+    refundAttachmentFile = file;
+    if (fileName) fileName.textContent = file.name;
+}
+
+async function submitRefundRequest() {
+    const orderId = document.getElementById('refundOrderId')?.value;
+    const reason = document.getElementById('refundReason')?.value.trim();
+    const total = Number(document.getElementById('refundAmount')?.value || 0);
+    if (!orderId || !reason || !Number.isFinite(total) || total <= 0) {
+        showInlineAlert('Lengkapi alasan refund dan total refund yang valid.');
+        return;
+    }
+
+    const targetOrder = getUserLocalOrders().find((order) => order.id === orderId);
+    if (!targetOrder || !isOrderCompletedStatus(targetOrder.status)) {
+        showInlineAlert('Refund hanya bisa diajukan untuk pesanan yang sudah selesai.');
+        return;
+    }
+
+    let attachmentUrl = '';
+    if (refundAttachmentFile) {
+        const proofName = refundAttachmentFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const proofPath = `refund-attachments/${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}-${proofName}`;
+        if (supabaseClient) {
+            const { error: uploadError } = await supabaseClient.storage.from('refund-attachments').upload(proofPath, refundAttachmentFile, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: refundAttachmentFile.type
+            });
+            if (uploadError) {
+                console.error('Foto refund gagal diunggah:', uploadError);
+                showInlineAlert('Foto refund gagal diunggah. Coba lagi setelah bucket refund-attachments dibuat.');
+                return;
+            }
+            attachmentUrl = supabaseClient.storage.from('refund-attachments').getPublicUrl(proofPath).data.publicUrl;
+        }
+    }
+
+    const refundRequest = {
+        order_id: orderId,
+        customer_name: targetOrder.customer_name || 'Pelanggan',
+        refund_reason: reason,
+        refund_total: total,
+        attachment_url: attachmentUrl,
+        status: 'pending',
+        admin_note: null,
+        created_at: new Date().toISOString()
+    };
+
+    const saved = await saveRefundRequestToDatabase(refundRequest);
+    if (!saved) {
+        showInlineAlert('Permintaan refund gagal dikirim. Coba lagi nanti.');
+        return;
+    }
+
+    closeRefundRequestModal();
+    renderMyOrdersInCart();
+    showInlineAlert('Permintaan refund terkirim. Tunggu persetujuan admin.');
+    if (typeof loadRefundRequestsFromDatabase === 'function' && document.getElementById('adminRefundRequestList')) {
+        await loadRefundRequestsFromDatabase();
+        renderRefundRequests();
+    }
+}
+
 function openOrderStatus() {
     const modal = document.getElementById('orderStatusModal');
     if (!modal) return;
     closeCartModal();
+    closeOrderHistory();
     renderMyOrdersInCart();
     modal.classList.add('active');
     modal.setAttribute('aria-hidden', 'false');
@@ -305,7 +473,30 @@ function closeOrderStatus() {
     if (!modal) return;
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('review-popup-open');
+    if (!document.getElementById('orderHistoryModal')?.classList.contains('active')) {
+        document.body.classList.remove('review-popup-open');
+    }
+}
+
+function openOrderHistory() {
+    const modal = document.getElementById('orderHistoryModal');
+    if (!modal) return;
+    closeCartModal();
+    closeOrderStatus();
+    renderMyOrdersInCart();
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('review-popup-open');
+}
+
+function closeOrderHistory() {
+    const modal = document.getElementById('orderHistoryModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    if (!document.getElementById('orderStatusModal')?.classList.contains('active')) {
+        document.body.classList.remove('review-popup-open');
+    }
 }
 
 function applyTheme(theme) {
@@ -571,7 +762,7 @@ function showCartAddNotification(itemName, quantity) {
         <i class="fa-solid fa-circle-check"></i>
         <span>${itemName} masuk ke keranjang (${quantity}x)</span>
     `;
-    notification.style.bottom = `${116 + (stackCount * 56)}px`;
+    notification.style.bottom = `${28 + (stackCount * 56)}px`;
     document.body.appendChild(notification);
 
     setTimeout(() => {
@@ -1018,21 +1209,21 @@ function goToMenu() {
 
 // UPDATE TAMPILAN KERANJANG
 function renderMyOrdersInCart() {
+    const statusList = document.getElementById('userOrderStatusList');
     const historyList = document.getElementById('userOrderHistoryList');
-    if (!historyList) return;
+    if (!statusList && !historyList) return;
 
     const orders = getUserLocalOrders();
-    if (!orders.length) {
-        historyList.innerHTML = '<p class="cart-empty-order">Belum ada pesanan yang dibuat.</p>';
-        return;
-    }
+    const activeOrders = orders.filter((order) => !isOrderCompletedStatus(order.status) && order.status !== 'cancelled');
+    const completedOrders = orders.filter((order) => isOrderCompletedStatus(order.status));
 
-    historyList.innerHTML = orders.map((order) => {
+    const renderOrderCard = (order, options = {}) => {
         const canCancel = ['new', 'queued'].includes(order.status);
         const statusClass = order.status === 'cancelled' ? 'status-cancelled' : order.status === 'delivered' ? 'status-delivered' : 'status-active';
         const progressStatus = order.status === 'confirmed' ? 'new' : order.status === 'completed' ? 'delivered' : order.status;
         const currentStep = ORDER_STATUS_STEPS.indexOf(progressStatus);
         const progress = order.status === 'cancelled' ? 0 : Math.max(0, currentStep);
+
         return `
             <div class="user-order-item">
                 <div class="user-order-top-row">
@@ -1055,23 +1246,60 @@ function renderMyOrdersInCart() {
                 <div class="user-order-actions">
                     ${order.payment_proof_url ? `<button type="button" class="proof-preview-btn" data-proof-url="${order.payment_proof_url}">Lihat bukti</button>` : ''}
                     ${canCancel ? `<button type="button" class="cancel-order-btn" data-order-id="${order.id}">Batalkan</button>` : ''}
+                    ${options.showRefund ? `<button type="button" class="refund-order-btn" data-order-id="${order.id}">Ajukan refund</button>` : ''}
                     ${['delivered', 'completed', 'cancelled'].includes(order.status) ? `<button type="button" class="cancel-order-btn delete-order-btn" data-order-id="${order.id}">Hapus</button>` : ''}
                 </div>
             </div>
         `;
-    }).join('');
+    };
 
-    historyList.querySelectorAll('.proof-preview-btn').forEach((button) => {
-        button.addEventListener('click', () => openPaymentProofModal(button.dataset.proofUrl));
-    });
-    historyList.querySelectorAll('.cancel-order-btn').forEach((button) => {
-        const orderId = button.dataset.orderId;
-        const isDeleteButton = button.classList.contains('delete-order-btn');
-        button.addEventListener('click', () => isDeleteButton ? deleteUserOrder(orderId) : cancelUserOrder(orderId));
-    });
-    historyList.querySelectorAll('.delivery-confirm-btn').forEach((button) => {
-        button.addEventListener('click', () => confirmOrderDelivery(button.dataset.orderId, button.dataset.received === 'true'));
-    });
+    const activeHtml = activeOrders.length
+        ? activeOrders.map((order) => renderOrderCard(order)).join('')
+        : '<p class="cart-empty-order">Belum ada pesanan yang sedang diproses.</p>';
+
+    const historyHtml = completedOrders.length
+        ? completedOrders.map((order) => renderOrderCard(order, { showRefund: true })).join('')
+        : '<p class="cart-empty-order">Belum ada pesanan yang sudah selesai untuk riwayat refund.</p>';
+
+    if (statusList) {
+        statusList.innerHTML = `
+            <div class="user-order-section">
+                <h4 class="user-order-section-title">Status Pesanan</h4>
+                ${activeHtml}
+            </div>
+        `;
+    }
+
+    if (historyList) {
+        historyList.innerHTML = `
+            <div class="user-order-section user-order-section-history">
+                <h4 class="user-order-section-title">Riwayat Pesanan</h4>
+                ${historyHtml}
+            </div>
+        `;
+    }
+
+    const attachListListeners = (list) => {
+        if (!list) return;
+
+        list.querySelectorAll('.proof-preview-btn').forEach((button) => {
+            button.addEventListener('click', () => openPaymentProofModal(button.dataset.proofUrl));
+        });
+        list.querySelectorAll('.cancel-order-btn').forEach((button) => {
+            const orderId = button.dataset.orderId;
+            const isDeleteButton = button.classList.contains('delete-order-btn');
+            button.addEventListener('click', () => isDeleteButton ? deleteUserOrder(orderId) : cancelUserOrder(orderId));
+        });
+        list.querySelectorAll('.refund-order-btn').forEach((button) => {
+            button.addEventListener('click', () => openRefundRequestModal(button.dataset.orderId));
+        });
+        list.querySelectorAll('.delivery-confirm-btn').forEach((button) => {
+            button.addEventListener('click', () => confirmOrderDelivery(button.dataset.orderId, button.dataset.received === 'true'));
+        });
+    };
+
+    attachListListeners(statusList);
+    attachListListeners(historyList);
 }
 
 async function refreshUserOrdersFromDatabase() {
@@ -1667,6 +1895,7 @@ function unlockAdminDashboard() {
     loadAdminComments();
     loadAdminFeedback();
     loadAdminDatabaseData();
+    renderRefundRequests();
 }
 
 // Jalan khusus saat berada di admin.html: cek sesi, tampilkan dashboard
@@ -1683,6 +1912,7 @@ function initAdminPage() {
         loadAdminComments();
         loadAdminFeedback();
         loadAdminDatabaseData();
+        renderRefundRequests();
     } else {
         openAdminGate();
     }
@@ -1928,7 +2158,8 @@ function renderAdminStats() {
 async function loadAdminDatabaseData() {
     const status = document.getElementById('databaseStatus');
     const ordersList = document.getElementById('databaseOrdersList');
-    if (!status || !ordersList) return;
+    const mobileOrdersList = document.getElementById('databaseOrdersListMobile');
+    if (!status || (!ordersList && !mobileOrdersList)) return;
 
     if (!supabaseClient) {
         status.textContent = 'Supabase belum dikonfigurasi. Isi supabase-config.js terlebih dahulu.';
@@ -1978,13 +2209,18 @@ async function loadAdminDatabaseData() {
     }
 
     const isMobileOrderList = window.innerWidth <= 599;
-    ordersList.classList.toggle('mobile-order-list', isMobileOrderList);
-    ordersList.innerHTML = '';
+    const tableRoot = ordersList?.closest('table');
+    if (tableRoot) tableRoot.style.display = isMobileOrderList ? 'none' : '';
+    if (mobileOrdersList) {
+        mobileOrdersList.hidden = !isMobileOrderList;
+        mobileOrdersList.innerHTML = '';
+    }
+    if (ordersList) ordersList.innerHTML = '';
 
     if (!filteredOrders.length) {
         if (isMobileOrderList) {
-            ordersList.innerHTML = '<div class="admin-mobile-order-empty">Belum ada pesanan di database.</div>';
-        } else {
+            if (mobileOrdersList) mobileOrdersList.innerHTML = '<div class="admin-mobile-order-empty">Belum ada pesanan di database.</div>';
+        } else if (ordersList) {
             ordersList.innerHTML = '<tr><td colspan="9">Belum ada pesanan di database.</td></tr>';
         }
         updateAdminOrderExpandButton(0);
@@ -2074,7 +2310,7 @@ async function loadAdminDatabaseData() {
             card.appendChild(header);
             card.appendChild(details);
             card.appendChild(actions);
-            ordersList.appendChild(card);
+            if (mobileOrdersList) mobileOrdersList.appendChild(card);
         });
         updateAdminOrderExpandButton(filteredOrders.length);
         return;
@@ -2733,6 +2969,20 @@ function setupHamburgerNavigation() {
             mobileNavPanel.appendChild(link);
         });
 
+        const historyLink = document.createElement('a');
+        historyLink.href = '#';
+        historyLink.textContent = 'Riwayat Pesanan';
+        historyLink.className = 'nav-hamburger-link';
+        historyLink.style.animationDelay = `${pages.length * 0.06}s`;
+        historyLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            closeHamburgerMenu();
+            if (typeof openOrderHistory === 'function') {
+                openOrderHistory();
+            }
+        });
+        mobileNavPanel.appendChild(historyLink);
+
         const themeButton = document.createElement('button');
         themeButton.type = 'button';
         themeButton.className = 'nav-hamburger-theme theme-toggle';
@@ -2792,6 +3042,118 @@ function setupHamburgerNavigation() {
             closeAdminConfirm();
         }
     });
+}
+
+async function loadRefundRequestsFromDatabase() {
+    if (!supabaseClient) {
+        const stored = getRefundRequestsLocal();
+        return stored.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    const { data, error } = await supabaseClient
+        .from('order_refunds')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Refund database gagal dimuat:', error);
+        return getRefundRequestsLocal();
+    }
+
+    return data || [];
+}
+
+async function renderRefundRequests() {
+    const list = document.getElementById('adminRefundRequestList');
+    if (!list) return;
+
+    const requests = supabaseClient ? await loadRefundRequestsFromDatabase() : getRefundRequestsLocal();
+    if (!requests.length) {
+        list.innerHTML = '<p class="admin-empty-state">Belum ada permintaan refund.</p>';
+        return;
+    }
+
+    list.innerHTML = requests.map((request) => `
+        <div class="admin-refund-item">
+            <div class="admin-refund-head">
+                <strong>${request.customer_name || 'Pelanggan'}</strong>
+                <span class="admin-refund-status admin-refund-status-${request.status || 'pending'}">${request.status === 'approved' ? 'Disetujui' : request.status === 'rejected' ? 'Ditolak' : 'Menunggu'}</span>
+            </div>
+            <p>Pesanan #${String(request.order_id || '').slice(0, 8).toUpperCase()} • Rp ${Number(request.refund_total || 0).toLocaleString('id-ID')}</p>
+            <p>${request.refund_reason || '-'}</p>
+            ${request.attachment_url ? `<a href="${request.attachment_url}" target="_blank" rel="noreferrer" class="admin-refund-attachment">Lihat foto</a>` : ''}
+            ${supabaseClient && (request.status || 'pending') === 'pending' ? `
+                <div class="admin-refund-actions">
+                    <button type="button" class="admin-refund-btn admin-refund-btn-approve" data-refund-id="${request.id}" data-action="approve">Setujui</button>
+                    <button type="button" class="admin-refund-btn admin-refund-btn-reject" data-refund-id="${request.id}" data-action="reject">Tolak</button>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+
+    if (supabaseClient) {
+        list.querySelectorAll('[data-action]').forEach((button) => {
+            const refundId = button.dataset.refundId;
+            const action = button.dataset.action;
+            button.addEventListener('click', () => {
+                if (action === 'approve') {
+                    approveRefundRequest(refundId);
+                } else {
+                    rejectRefundRequest(refundId);
+                }
+            });
+        });
+    }
+}
+
+async function approveRefundRequest(refundId) {
+    if (!refundId) return;
+    if (!supabaseClient) {
+        const stored = getRefundRequestsLocal();
+        const target = stored.find((request) => request.id === refundId);
+        if (!target) return;
+        target.status = 'approved';
+        target.reviewed_at = new Date().toISOString();
+        localStorage.setItem(REFUND_REQUESTS_KEY, JSON.stringify(stored));
+        renderRefundRequests();
+        showAdminToast('Berhasil', 'Refund disetujui.');
+        return;
+    }
+
+    const { error } = await supabaseClient.from('order_refunds').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', refundId);
+    if (error) {
+        console.error('Persetujuan refund gagal:', error);
+        showAdminToast('Gagal', 'Refund belum berhasil disetujui.');
+        return;
+    }
+    showAdminToast('Berhasil', 'Refund disetujui.');
+    await loadRefundRequestsFromDatabase();
+    renderRefundRequests();
+}
+
+async function rejectRefundRequest(refundId) {
+    if (!refundId) return;
+    if (!supabaseClient) {
+        const stored = getRefundRequestsLocal();
+        const target = stored.find((request) => request.id === refundId);
+        if (!target) return;
+        target.status = 'rejected';
+        target.reviewed_at = new Date().toISOString();
+        localStorage.setItem(REFUND_REQUESTS_KEY, JSON.stringify(stored));
+        renderRefundRequests();
+        showAdminToast('Berhasil', 'Refund ditolak.');
+        return;
+    }
+
+    const { error } = await supabaseClient.from('order_refunds').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', refundId);
+    if (error) {
+        console.error('Penolakan refund gagal:', error);
+        showAdminToast('Gagal', 'Refund belum berhasil ditolak.');
+        return;
+    }
+    showAdminToast('Berhasil', 'Refund ditolak.');
+    await loadRefundRequestsFromDatabase();
+    renderRefundRequests();
 }
 
 async function loadAdminFeedback() {
