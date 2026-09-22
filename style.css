@@ -7025,6 +7025,23 @@ body.galeri-lock {
         padding-bottom: env(safe-area-inset-bottom);
     }
 
+    :root[data-theme="dark"] #orderStatusModal .modal-content,
+    :root[data-theme="dark"] #orderHistoryModal .modal-content {
+        background: var(--bg-light);
+    }
+
+    :root[data-theme="dark"] #orderStatusModal .modal-header,
+    :root[data-theme="dark"] #orderHistoryModal .modal-header {
+        background: var(--bg-light);
+    }
+
+    :root[data-theme="dark"] #orderStatusModal .user-order-history,
+    :root[data-theme="dark"] #orderHistoryModal .user-order-history,
+    :root[data-theme="dark"] #orderStatusModal .user-order-item,
+    :root[data-theme="dark"] #orderHistoryModal .user-order-item {
+        background: rgba(var(--primary-rgb), 0.08);
+    }
+
     header {
         padding-top: env(safe-area-inset-top);
     }
