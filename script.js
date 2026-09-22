@@ -573,6 +573,8 @@ function setupHomeHeroSlider() {
     let slideIndex = 0;
     const totalSlides = dots.length;
     const AUTO_SLIDE_MS = 8000;
+    let touchStartX = 0;
+    let touchStartY = 0;
 
     const updateSlider = () => {
         slider.style.transform = `translateX(-${slideIndex * 50}%)`;
@@ -594,6 +596,20 @@ function setupHomeHeroSlider() {
     dots.forEach((dot) => {
         dot.addEventListener('click', () => goToSlide(Number(dot.dataset.slide)));
     });
+
+    slider.parentElement?.addEventListener('touchstart', (event) => {
+        const touch = event.changedTouches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+    }, { passive: true });
+
+    slider.parentElement?.addEventListener('touchend', (event) => {
+        const touch = event.changedTouches[0];
+        const distanceX = touch.clientX - touchStartX;
+        const distanceY = touch.clientY - touchStartY;
+        if (Math.abs(distanceX) < 45 || Math.abs(distanceX) <= Math.abs(distanceY)) return;
+        goToSlide(slideIndex + (distanceX < 0 ? 1 : -1));
+    }, { passive: true });
 
     updateSlider();
     setInterval(() => {

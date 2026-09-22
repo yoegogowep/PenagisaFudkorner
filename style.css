@@ -4793,6 +4793,7 @@ button.clear-cart-btn {
 .home-hero-viewport {
     overflow: hidden;
     z-index: -2;
+    touch-action: pan-y;
 }
 
 .home-hero-slider {
@@ -5370,8 +5371,13 @@ button.clear-cart-btn {
         border-radius: 22px;
     }
 
+    .home-hero-controls {
+        bottom: 54px;
+        right: 14px;
+    }
+
     .home-hero-content {
-        padding: 34px 24px;
+        padding: 34px 24px 76px;
     }
 
     .home-hero h1 {
@@ -7726,7 +7732,7 @@ video {
     }
 
     .home-hero-content {
-        padding: 28px 20px;
+        padding: 28px 20px 76px;
     }
 
     .home-hero h1 {
