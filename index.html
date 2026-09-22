@@ -17,7 +17,7 @@
             document.documentElement.classList.add('gate-seen');
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -64,16 +64,32 @@
             </nav>
         </div>
     </header>
-
     <main class="page-container home-container">
         <section class="home-hero" aria-labelledby="home-title">
-            <img src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1500&q=85" alt="Hidangan hangat Penagisa Food Corner" class="home-hero-image">
+            <div class="home-hero-viewport" aria-live="polite">
+                <div class="home-hero-slider" id="homeHeroSlider">
+                    <div class="home-hero-slide">
+                        <img src="foto-home.jpg" alt="Hidangan hangat Penagisa Food Corner" class="home-hero-image">
+                    </div>
+                    <div class="home-hero-slide">
+                        <img src="foto-home2.jpg" alt="Pilihan menu Penagisa Food Corner" class="home-hero-image">
+                    </div>
+                </div>
+            </div>
             <div class="home-hero-overlay"></div>
             <div class="home-hero-content">
-                <span class="home-eyebrow"><i class="fa-solid fa-leaf"></i> UMKM lokal pilihan</span>
-                <h1 id="home-title">Rasa rumahan,<br><strong>semangat harian.</strong></h1>
+                <h1 id="home-title"><span class="home-hero-brand">PENAGISA</span><br><strong>FOOD CORNER</strong></h1>
                 <p>Santapan lezat dibuat hangat untuk menemani harimu.</p>
-                <a href="menu.html" class="home-hero-btn">Lihat menu <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="menu.html" class="home-hero-btn">Lihat Katalog <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="home-hero-controls" aria-label="Kontrol slide hero">
+                <div class="home-hero-dots" aria-label="Indikator slide" role="tablist">
+                    <button type="button" class="home-hero-dot active" aria-label="Tampilkan slide 1" aria-current="true" data-slide="0"></button>
+                    <button type="button" class="home-hero-dot" aria-label="Tampilkan slide 2" aria-current="false" data-slide="1"></button>
+                </div>
+                <button type="button" class="home-hero-arrow home-hero-next" aria-label="Slide berikutnya">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
             </div>
         </section>
 
@@ -87,19 +103,6 @@
             <div class="home-order-field"><i class="fa-solid fa-clock"></i><span>Siap diantar hari ini</span></div>
         </section>
 
-        <section class="home-welcome">
-            <div class="home-welcome-image">
-                <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=85" alt="Suasana tempat makan Penagisa Food Corner">
-                <span class="home-image-badge"><i class="fa-solid fa-heart"></i> Dibuat dengan rasa</span>
-            </div>
-            <div class="home-welcome-copy">
-                <span class="home-section-kicker">Selamat datang</span>
-                <h2>Teman makan yang<br><em>selalu dekat.</em></h2>
-                <p>Penagisa Food Corner menyajikan makanan dan minuman sederhana yang nikmat, segar, dan cocok untuk setiap momen.</p>
-                <a href="info.html" class="home-text-link">Kenal lebih dekat <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
-        </section>
-
         <section class="home-favorites" aria-labelledby="favorite-title">
             <div class="home-section-heading">
                 <div>
@@ -110,17 +113,17 @@
             </div>
             <div class="home-favorite-grid">
                 <button class="home-favorite-card" type="button" onclick="window.location.href='menu.html'">
-                    <img src="https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=700&q=80" alt="Gyoza">
+                    <img src="gyoza1.jpeg" alt="Gyoza">
                     <span><strong>Gyoza</strong><small>Hangat & gurih</small></span>
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </button>
                 <button class="home-favorite-card" type="button" onclick="window.location.href='menu.html'">
-                    <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=700&q=80" alt="Cappucino Cincau">
+                    <img src="capcin1.PNG" alt="Cappucino Cincau">
                     <span><strong>Cappucino Cincau</strong><small>Segar & creamy</small></span>
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </button>
                 <button class="home-favorite-card" type="button" onclick="window.location.href='menu.html'">
-                    <img src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=700&q=80" alt="Cilok">
+                    <img src="cilok1.PNG" alt="Cilok">
                     <span><strong>Cilok</strong><small>Kenyal & gurih</small></span>
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </button>

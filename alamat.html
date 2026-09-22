@@ -65,19 +65,6 @@
                     <div class="map-container">
                         <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1177.3063954657696!2d109.91997477796625!3d-7.012704030981963!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e70153aaf18df7f%3A0xa5a47313ff22cdb7!2sSMK%20Ma'arif%20NU%2001%20Limpung!5e0!3m2!1sid!2sid!4v1788932211669!5m2!1sid!2sid" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
                     </div>
-                    <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px;">
-                        <input id="originAddressInput" type="text" placeholder="Masukkan alamat Anda (opsional)" style="flex:1; min-width:180px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-light); color:var(--text-dark);">
-                        <button class="contact-card-btn" id="directionsFromAddressBtn" onclick="openDirectionsFromInput(-7.012704030981963, 109.91997477796625)">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div class="contact-icon" style="background:#2ecc71;"><i class="fa-solid fa-paper-plane"></i></div>
-                                <div>
-                                    <div style="font-weight:700; font-size:13px;">Rute dari Alamat Saya</div>
-                                    <div style="font-size:11px; color:var(--text-muted);">Gunakan alamat yang Anda masukkan</div>
-                                </div>
-                            </div>
-                            <i class="fa-solid fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
-                        </button>
-                    </div>
                 </div>
 
                 <div>
@@ -86,17 +73,20 @@
                     <p>Jl. KH. Wahid Hasyim No.1, Limpung, Kec. Limpung, Kabupaten Batang, Jawa Tengah 51271</p>
                     <p style="margin-top:12px; font-size:12px; color:var(--primary); font-weight:700;"><i class="fa-solid fa-compass"></i> Patokan: Berada di NUSA SPORT CENTER</p>
 
-                    <div class="contact-stack">
-                        <a href="https://maps.app.goo.gl/zvHuta6wiYSS6ce6A" target="_blank" class="contact-card-btn">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div class="contact-icon" style="background:var(--primary);"><i class="fa-solid fa-map-location-dot"></i></div>
-                                <div>
-                                    <div style="font-weight:700; font-size:13px;">Petunjuk Arah</div>
-                                    <div style="font-size:11px; color:var(--text-muted);">Buka di Google Maps</div>
+                    <div class="contact-stack" style="margin-top:12px;">
+                        <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                            <input id="originAddressInput" type="text" placeholder="Masukkan alamat Anda (opsional)" style="flex:1; min-width:180px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-light); color:var(--text-dark);">
+                            <button class="contact-card-btn" id="directionsFromAddressBtn" onclick="openDirectionsFromInput(-7.012704030981963, 109.91997477796625)">
+                                <div style="display:flex; align-items:center; gap:10px; margin-left:0;">
+                                    <div class="contact-icon" style="background:#2ecc71;"><i class="fa-solid fa-paper-plane"></i></div>
+                                    <div>
+                                        <div style="font-weight:700; font-size:13px;">Rute dari Alamat Saya</div>
+                                        <div style="font-size:11px; color:var(--text-muted);">Gunakan alamat yang Anda masukkan</div>
+                                    </div>
                                 </div>
-                            </div>
-                            <i class="fa-solid fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
-                        </a>
+                                <i class="fa-solid fa-chevron-right" style="color:var(--text-muted); font-size:12px;"></i>
+                            </button>
+                        </div>
 
                         <button class="contact-card-btn" id="directionsBtn" onclick="openDirectionsTo(-7.012704030981963, 109.91997477796625)" type="button">
                             <div style="display:flex; align-items:center; gap:10px;">

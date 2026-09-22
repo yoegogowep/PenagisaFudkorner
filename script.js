@@ -478,9 +478,38 @@ function closeOrderStatus() {
     }
 }
 
+function ensureOrderHistoryModal() {
+    let modal = document.getElementById('orderHistoryModal');
+    if (modal) return modal;
+
+    modal = document.createElement('div');
+    modal.className = 'modal-overlay order-status-modal';
+    modal.id = 'orderHistoryModal';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-size:18px;"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Pesanan</h3>
+                <button class="order-status-close" type="button" onclick="closeOrderHistory()" aria-label="Tutup riwayat pesanan"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <section class="user-order-history" aria-labelledby="userOrderHistoryTitle">
+                <div class="user-order-history-heading">
+                    <div>
+                        <span class="section-eyebrow">Pelacakan</span>
+                        <h3 id="userOrderHistoryTitle">Riwayat pesanan selesai</h3>
+                    </div>
+                    <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+                </div>
+                <div id="userOrderHistoryList"></div>
+            </section>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+}
+
 function openOrderHistory() {
-    const modal = document.getElementById('orderHistoryModal');
-    if (!modal) return;
+    const modal = ensureOrderHistoryModal();
     closeCartModal();
     closeOrderStatus();
     renderMyOrdersInCart();
@@ -502,6 +531,7 @@ function closeOrderHistory() {
 function applyTheme(theme) {
     const isDark = theme === 'dark';
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    updateGalleryPenImages();
 
     const button = document.querySelector('.theme-toggle');
     if (button) {
@@ -517,6 +547,58 @@ function toggleTheme() {
     const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem(THEME_KEY, nextTheme);
     applyTheme(nextTheme);
+}
+
+function getGalleryPenImage() {
+    return document.documentElement.dataset.theme === 'dark'
+        ? 'pgfc-merah.PNG'
+        : 'pgfc-biru.PNG';
+}
+
+function updateGalleryPenImages() {
+    const penImage = getGalleryPenImage();
+    document.querySelectorAll('[data-gallery-pen]').forEach((image) => {
+        image.src = penImage;
+    });
+}
+
+function setupHomeHeroSlider() {
+    const slider = document.getElementById('homeHeroSlider');
+    const prevButton = document.querySelector('.home-hero-prev');
+    const nextButton = document.querySelector('.home-hero-next');
+    const dots = Array.from(document.querySelectorAll('.home-hero-dot'));
+
+    if (!slider || !dots.length) return;
+
+    let slideIndex = 0;
+    const totalSlides = dots.length;
+    const AUTO_SLIDE_MS = 8000;
+
+    const updateSlider = () => {
+        slider.style.transform = `translateX(-${slideIndex * 50}%)`;
+        dots.forEach((dot, index) => {
+            const isActive = index === slideIndex;
+            dot.classList.toggle('active', isActive);
+            dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+            dot.setAttribute('aria-label', `Tampilkan slide ${index + 1}`);
+        });
+    };
+
+    const goToSlide = (index) => {
+        slideIndex = (index + totalSlides) % totalSlides;
+        updateSlider();
+    };
+
+    prevButton?.addEventListener('click', () => goToSlide(slideIndex - 1));
+    nextButton?.addEventListener('click', () => goToSlide(slideIndex + 1));
+    dots.forEach((dot) => {
+        dot.addEventListener('click', () => goToSlide(Number(dot.dataset.slide)));
+    });
+
+    updateSlider();
+    setInterval(() => {
+        goToSlide(slideIndex + 1);
+    }, AUTO_SLIDE_MS);
 }
 
 function getWebsiteLink() {
@@ -566,9 +648,9 @@ const menuItems = [
         ingredients: ["Bubuk Cappucino pilihan", "Cincau", "Gula", "Es batu"],
         highlight: "Rasa manis, segar dan kenyal dari cincau yang membuat perpaduannya istimewa.",
         images: [
-            "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80"
+            "capcin1.PNG",
+            "capcin2.PNG",
+            "capcin3.PNG"
         ]
     },
     {
@@ -582,9 +664,9 @@ const menuItems = [
         ingredients: ["Daging cincang", "Sayuran", "Bumbu kuah"],
         highlight: "Berserat lezat, cocok untuk makan siang atau malam dengan porsi yang mengenyangkan.",
         images: [
-            "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=900&q=80"
+            "gyoza1.jpeg",
+            "gyoza2.jpeg",
+            "gyoza3.jpeg"
         ]
     },
 
@@ -599,9 +681,9 @@ const menuItems = [
         ingredients: ["Kopi bubuk pilihan", "Susu cair", "Gula aren", "Es batu"],
         highlight: "Rasa creamy dengan aroma kopi yang lembut, cocok untuk dinikmati kapan saja.",
         images: [
-            "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=900&q=80"
+            "cilok1.PNG",
+            "cilok2.jpeg",
+            "cilok3.jpg"
         ]
     },
     {
@@ -1492,6 +1574,49 @@ function setOrderActionButton(label, showWhatsappIcon) {
     button.innerHTML = `${showWhatsappIcon ? '<i class="fa-brands fa-whatsapp"></i> ' : ''}${label}`;
 }
 
+function showPageLoading(message = 'Memuat halaman...') {
+    let loader = document.getElementById('pageLoadingOverlay');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'pageLoadingOverlay';
+        loader.className = 'page-loading-overlay';
+        loader.setAttribute('role', 'status');
+        loader.setAttribute('aria-live', 'polite');
+        loader.innerHTML = `
+            <div class="page-loading-card">
+                <span class="page-loading-spinner" aria-hidden="true"></span>
+                <strong class="page-loading-message"></strong>
+            </div>
+        `;
+        document.body.appendChild(loader);
+    }
+    loader.querySelector('.page-loading-message').textContent = message;
+    loader.classList.add('is-visible');
+}
+
+function hidePageLoading() {
+    document.getElementById('pageLoadingOverlay')?.classList.remove('is-visible');
+}
+
+function setupPageLoading() {
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('a[href]');
+        if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+
+        try {
+            const destination = new URL(href, window.location.href);
+            if (destination.origin !== window.location.origin) return;
+        } catch (error) {
+            return;
+        }
+
+        showPageLoading('Membuka halaman...');
+    });
+}
+
 function startOrderConfirmation() {
     if (orderSubmissionInProgress) return;
     if (pendingOrder) {
@@ -1607,30 +1732,26 @@ async function completeOrder() {
     const actionButton = document.getElementById('orderActionButton');
     if (actionButton) actionButton.disabled = true;
 
-    if (!pendingOrder) {
-        startOrderConfirmation();
-        orderSubmissionInProgress = false;
-        if (actionButton) actionButton.disabled = false;
-        return;
-    }
+    try {
 
-    const paymentMethod = document.getElementById('paymentMethod')?.value;
-    if (!paymentMethod) {
-        showInlineAlert('Silakan pilih metode pembayaran terlebih dahulu.');
-        orderSubmissionInProgress = false;
-        if (actionButton) actionButton.disabled = false;
-        return;
-    }
+        if (!pendingOrder) {
+            showInlineAlert('Lengkapi data pesanan terlebih dahulu.');
+            return;
+        }
 
-    if (paymentMethod === 'QRIS' && !qrisPaymentConfirmed) {
-        openQrisPaymentModal();
-        showInlineAlert('Selesaikan pembayaran QRIS dan unggah bukti transfer terlebih dahulu.');
-        orderSubmissionInProgress = false;
-        if (actionButton) actionButton.disabled = false;
-        return;
-    }
+        const paymentMethod = document.getElementById('paymentMethod')?.value;
+        if (!paymentMethod) {
+            showInlineAlert('Silakan pilih metode pembayaran terlebih dahulu.');
+            return;
+        }
 
-    const { name, type, address, note } = pendingOrder;
+        if (paymentMethod === 'QRIS' && !qrisPaymentConfirmed) {
+            openQrisPaymentModal();
+            showInlineAlert('Selesaikan pembayaran QRIS dan unggah bukti transfer terlebih dahulu.');
+            return;
+        }
+
+        const { name, type, address, note } = pendingOrder;
 
     const orderItems = Object.keys(cart).map(id => {
         const item = menuItems.find(menuItem => menuItem.id == id);
@@ -1724,7 +1845,18 @@ async function completeOrder() {
     qrisPaymentProofFile = null;
     orderSubmissionInProgress = false;
     saveAndRefreshCart();
-    showOrderReviewModal(orderedProducts);
+    showPageLoading('Pesanan berhasil dikirim...');
+    window.setTimeout(() => {
+        hidePageLoading();
+        showOrderReviewModal(orderedProducts);
+    }, 800);
+    } catch (error) {
+        console.error('Proses konfirmasi pesanan gagal:', error);
+        showInlineAlert('Pesanan belum berhasil diproses. Silakan coba lagi.');
+    } finally {
+        orderSubmissionInProgress = false;
+        if (actionButton) actionButton.disabled = false;
+    }
 }
 
 function showOrderReviewModal(products) {
@@ -2497,6 +2629,7 @@ function setupMenuSearch() {
 // INIT
 document.addEventListener("DOMContentLoaded", () => {
     applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+    setupHomeHeroSlider();
     setupHamburgerNavigation();
     recordAudienceClick();
     loadCommentsFromDatabase();
@@ -2635,6 +2768,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     setupHamburgerNavigation();
+    setupPageLoading();
     setupGalleryPage();
 });
 
@@ -2710,7 +2844,7 @@ function setupGalleryPage() {
         }
     }
 
-    function buildPhoto(item, set, src, photoIndex, isFirstOnPage) {
+    function buildPhoto(item, set, src, photoIndex, isFirstOnPage, isPenPhoto = false) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'galeri-photo';
@@ -2719,6 +2853,10 @@ function setupGalleryPage() {
 
         const img = new Image();
         img.alt = `${item.name}, foto ${photoIndex + 1}`;
+        if (isPenPhoto) {
+            img.dataset.galleryPen = 'true';
+            src = getGalleryPenImage();
+        }
         img.decoding = 'async';
         img.loading = 'eager';
         img.fetchPriority = isFirstOnPage ? 'high' : 'auto';
@@ -2778,9 +2916,14 @@ function setupGalleryPage() {
 
         const photos = document.createElement('div');
         photos.className = 'galeri-photos';
-        item.images.slice(0, 4).forEach((src, photoIndex) => {
+        const productImages = item.images.slice(0, 3);
+        productImages.slice(0, 2).forEach((src, photoIndex) => {
             photos.appendChild(buildPhoto(item, set, src, photoIndex, index === 0 && photoIndex === 0));
         });
+        photos.appendChild(buildPhoto(item, set, getGalleryPenImage(), 2, false, true));
+        if (productImages[2]) {
+            photos.appendChild(buildPhoto(item, set, productImages[2], 3, false));
+        }
 
         set.append(head, photos);
         updateSetCount(set);
@@ -2939,7 +3082,7 @@ function setupHamburgerNavigation() {
 
         const pages = [
             { text: 'Home', href: 'index.html' },
-            { text: 'Menu', href: 'menu.html' },
+            { text: 'Katalog', href: 'menu.html' },
             { text: 'Info', href: 'info.html' },
             { text: 'Gallery', href: 'gallery.html' },
             { text: 'Lokasi', href: 'alamat.html' },
@@ -2959,7 +3102,7 @@ function setupHamburgerNavigation() {
             if (isHomePage || window.location.pathname.endsWith(page.href)) {
                 link.classList.add('active');
             }
-            if (page.text === 'Menu' && window.location.pathname.endsWith('menu.html')) {
+            if (page.text === 'Katalog' && window.location.pathname.endsWith('menu.html')) {
                 link.classList.add('active');
             }
             if (page.text === 'Gallery') {
