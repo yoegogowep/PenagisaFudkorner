@@ -1448,6 +1448,28 @@ button.clear-cart-btn {
     color: var(--primary) !important;
 }
 
+#cartModal .modal-header > button {
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    display: grid;
+    place-items: center;
+    appearance: none;
+    border: 0 !important;
+    border-radius: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none;
+}
+
+#cartModal .modal-header > button:hover,
+#cartModal .modal-header > button:focus-visible {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: none;
+}
+
 /* CARDS HALAMAN INFO, LOKASI, KONTAK */
 .info-card {
     background: var(--bg-white);
@@ -3833,15 +3855,26 @@ button.clear-cart-btn {
 
     .contact-card-btn {
         padding: 13px 12px;
-        gap: 10px;
+        justify-content: flex-start;
+        gap: 8px;
     }
 
     .contact-card-btn > div:first-child {
+        display: flex;
+        flex: 1;
+        align-items: center;
         min-width: 0;
+        gap: 6px !important;
     }
 
     .contact-card-btn > div:first-child > div:last-child {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
         min-width: 0;
+        gap: 3px;
     }
 
     .contact-card-btn > div:first-child > div:last-child div {
@@ -7121,9 +7154,15 @@ body.galeri-lock {
     .home-hero-buttons,
     .admin-reset-actions,
     .nav-tools,
-    .contact-card-btn,
     .user-order-actions {
         flex-direction: column;
+    }
+
+    .contact-card-btn {
+        flex-direction: row;
+        align-items: center;
+        padding-left: 16px;
+        padding-right: 16px;
     }
 
     .contact-card-btn,

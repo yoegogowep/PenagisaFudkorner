@@ -692,10 +692,10 @@ const menuItems = [
         category: "makanan",
         price: 5000,
         rating: 4.8,
-        shortDesc: "Es kopi susu gula aren asli gurih renyah.",
-        desc: "Minuman kopi susu dengan sentuhan gula aren yang manis, creamy, dan bikin mood makin nikmat untuk menemani hari.",
-        ingredients: ["Kopi bubuk pilihan", "Susu cair", "Gula aren", "Es batu"],
-        highlight: "Rasa creamy dengan aroma kopi yang lembut, cocok untuk dinikmati kapan saja.",
+        shortDesc: "Cilok kenyal dengan bumbu gurih yang bikin nagih.",
+        desc: "Cilok berbahan dasar tepung tapioka yang kenyal, disajikan hangat dengan bumbu gurih untuk camilan yang nikmat.",
+        ingredients: ["Tepung tapioka", "Tepung terigu", "Bawang putih", "Daun bawang", "Bumbu gurih"],
+        highlight: "Teksturnya kenyal dan bumbunya gurih, cocok dinikmati sebagai camilan kapan saja.",
         images: [
             "cilok1.PNG",
             "cilok2.jpeg",
@@ -1615,6 +1615,11 @@ function hidePageLoading() {
 }
 
 function setupPageLoading() {
+    const resetPageLoading = () => hidePageLoading();
+
+    window.addEventListener('pageshow', resetPageLoading);
+    window.addEventListener('pagehide', resetPageLoading);
+
     document.addEventListener('click', (event) => {
         const link = event.target.closest('a[href]');
         if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
