@@ -39,6 +39,7 @@ Masih di `script.js`, ubah isi array `menuItems` untuk mengatur:
 - Nama produk pada `name`
 - Kategori pada `category`, yaitu `makanan` atau `minuman`
 - Harga pada `price`
+- Stok awal pada `stock` (stok berjalan dapat diubah dari dashboard admin)
 - Deskripsi singkat pada `shortDesc`
 - Deskripsi lengkap pada `desc`
 - Komposisi produk pada `ingredients`
@@ -53,6 +54,7 @@ Contoh bagian produk:
   name: "Nama Produk",
   category: "makanan",
   price: 10000,
+  stock: 20,
   shortDesc: "Deskripsi singkat produk.",
   desc: "Deskripsi lengkap produk.",
   ingredients: ["Komposisi 1", "Komposisi 2"],

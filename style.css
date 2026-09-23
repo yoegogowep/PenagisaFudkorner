@@ -990,16 +990,36 @@ header {
 }
 
 .card-footer {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
+    display: flex;
     gap: 8px;
+    justify-content: space-between;
 }
 
 .card-price {
     font-size: 16px;
     font-weight: 800;
     color: var(--primary);
+}
+
+.card-product-meta {
+    align-items: baseline;
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+    padding: 5px 0 6px;
+}
+
+.card-stock {
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.card-stock.is-empty {
+    color: #b45309;
 }
 
 .menu-actions {
@@ -1500,6 +1520,7 @@ button.clear-cart-btn {
 
 .umkm-profile-image {
     border-radius: 12px;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
     display: block;
     height: 190px;
     margin: -5px -5px 26px;
@@ -1517,6 +1538,7 @@ button.clear-cart-btn {
 
 .umkm-location-image {
     border-radius: 12px;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
     display: block;
     height: 190px;
     margin: 22px -5px -5px;
@@ -4495,6 +4517,15 @@ button.clear-cart-btn {
         margin-bottom: 8px;
     }
 
+    .card-product-meta {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .card-product-meta .card-price {
+        margin-bottom: 0;
+    }
+
     .menu-actions {
         width: 100%;
         gap: 5px;
@@ -4912,6 +4943,10 @@ button.clear-cart-btn {
 .home-hero-viewport {
     overflow: hidden;
     z-index: -2;
+    touch-action: pan-y;
+}
+
+.home-hero {
     touch-action: pan-y;
 }
 
@@ -5809,6 +5844,84 @@ button.clear-cart-btn {
 .admin-review-row:last-child {
     border-bottom: none;
     padding-bottom: 14px;
+}
+
+.admin-stock-help {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+.admin-stock-list {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-stock-row {
+    align-items: center;
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 10px 12px;
+}
+
+.admin-stock-info {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.admin-stock-info strong {
+    font-size: 12px;
+}
+
+.admin-stock-info span {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.admin-stock-controls {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    gap: 5px;
+}
+
+.admin-stock-controls input {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dark);
+    font-size: 12px;
+    font-weight: 700;
+    max-width: 58px;
+    padding: 7px 5px;
+    text-align: center;
+}
+
+.admin-stock-adjust {
+    align-items: center;
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dark);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 16px;
+    height: 30px;
+    justify-content: center;
+    line-height: 1;
+    width: 30px;
+}
+
+.admin-stock-adjust:hover,
+.admin-stock-adjust:focus-visible {
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .admin-review-info {
@@ -7332,10 +7445,16 @@ body.galeri-lock {
 
     .user-order-actions {
         flex-wrap: wrap;
+        align-items: flex-start;
+        flex-direction: row;
+        gap: 8px;
+        justify-content: flex-start;
     }
 
     .user-order-actions button {
-        flex: 1 1 130px;
+        flex: 0 0 auto;
+        min-height: 34px;
+        width: auto;
     }
 
     .admin-order-search {
@@ -7962,6 +8081,84 @@ button:not(.star-btn):focus-visible,
     filter: saturate(1.08) brightness(1.03);
 }
 
+button.galeri-chip:not(.star-btn) {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(0, 0, 0, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 8px 20px rgba(0, 0, 0, 0.14);
+    color: var(--text-dark);
+}
+
+button.galeri-chip:not(.star-btn):hover,
+button.galeri-chip:not(.star-btn):focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(0, 0, 0, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52), 0 10px 22px rgba(0, 0, 0, 0.18);
+    filter: none;
+}
+
+:root[data-theme="dark"] button.galeri-chip[aria-pressed="false"]:not(.star-btn) {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="dark"] button.galeri-chip[aria-pressed="false"]:not(.star-btn):hover,
+:root[data-theme="dark"] button.galeri-chip[aria-pressed="false"]:not(.star-btn):focus-visible {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 10px 22px rgba(0, 0, 0, 0.16);
+}
+
+button.galeri-chip[aria-pressed="true"]:not(.star-btn) {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 8px 18px rgba(var(--primary-rgb), 0.28);
+    color: #ffffff;
+    filter: none;
+}
+
+button.review-like-btn:not(.star-btn) {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(0, 0, 0, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 6px 16px rgba(0, 0, 0, 0.14);
+    color: var(--text-muted);
+}
+
+button.review-like-btn:not(.star-btn):hover,
+button.review-like-btn:not(.star-btn):focus-visible,
+button.review-like-btn.is-liked:not(.star-btn) {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(0, 0, 0, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52), 0 8px 18px rgba(0, 0, 0, 0.18);
+    color: var(--text-dark);
+    filter: none;
+}
+
+.review-like-btn .fa-heart {
+    color: var(--text-muted);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.review-like-btn.is-liked .fa-heart {
+    color: #e4a11b;
+    transform: scale(1.08);
+}
+
+button.contact-card-btn:not(.star-btn) {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(0, 0, 0, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.46), 0 10px 24px rgba(0, 0, 0, 0.18);
+    color: var(--text-dark);
+}
+
+button.contact-card-btn:not(.star-btn):hover,
+button.contact-card-btn:not(.star-btn):focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(0, 0, 0, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52), 0 14px 30px rgba(0, 0, 0, 0.22);
+    filter: none;
+}
+
 /* Home call-to-action buttons use the original solid color treatment. */
 .home-hero-btn {
     background: var(--primary-gradient);
@@ -8096,6 +8293,19 @@ body.ordering-page .review-thank-you-button:focus-visible {
     box-shadow: 0 9px 20px rgba(var(--primary-rgb), 0.38) !important;
     color: #ffffff !important;
     filter: none;
+}
+
+body.ordering-page .add-btn:disabled,
+body.ordering-page .add-btn:disabled:hover,
+body.ordering-page .add-btn:disabled:focus-visible {
+    background: var(--bg-light) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: none !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed;
+    filter: none;
+    opacity: 0.72;
+    transform: none;
 }
 
 body.ordering-page .review-btn {

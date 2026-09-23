@@ -2,6 +2,7 @@
 const NOMOR_WA_UMKM = "6282135783347";
 const THEME_KEY = "umkm_theme";
 const PURCHASED_PRODUCTS_KEY = "umkm_purchased_products";
+const PRODUCT_STOCKS_KEY = "umkm_product_stocks";
 const USER_ORDERS_KEY = "umkm_user_orders";
 const REFUND_REQUESTS_KEY = "umkm_refund_requests";
 const COMMENT_LIKE_KEY = "umkm_liked_comments";
@@ -575,6 +576,8 @@ function setupHomeHeroSlider() {
     const AUTO_SLIDE_MS = 8000;
     let touchStartX = 0;
     let touchStartY = 0;
+    let isTrackingTouch = false;
+    const hero = slider.closest('.home-hero');
 
     const updateSlider = () => {
         slider.style.transform = `translateX(-${slideIndex * 50}%)`;
@@ -597,18 +600,29 @@ function setupHomeHeroSlider() {
         dot.addEventListener('click', () => goToSlide(Number(dot.dataset.slide)));
     });
 
-    slider.parentElement?.addEventListener('touchstart', (event) => {
+    hero?.addEventListener('touchstart', (event) => {
+        if (event.target.closest?.('button, a, input, textarea, select')) {
+            isTrackingTouch = false;
+            return;
+        }
         const touch = event.changedTouches[0];
         touchStartX = touch.clientX;
         touchStartY = touch.clientY;
+        isTrackingTouch = true;
     }, { passive: true });
 
-    slider.parentElement?.addEventListener('touchend', (event) => {
+    hero?.addEventListener('touchend', (event) => {
+        if (!isTrackingTouch) return;
+        isTrackingTouch = false;
         const touch = event.changedTouches[0];
         const distanceX = touch.clientX - touchStartX;
         const distanceY = touch.clientY - touchStartY;
         if (Math.abs(distanceX) < 45 || Math.abs(distanceX) <= Math.abs(distanceY)) return;
         goToSlide(slideIndex + (distanceX < 0 ? 1 : -1));
+    }, { passive: true });
+
+    hero?.addEventListener('touchcancel', () => {
+        isTrackingTouch = false;
     }, { passive: true });
 
     updateSlider();
@@ -659,6 +673,7 @@ const menuItems = [
         category: "minuman",
         price: 5000,
         rating: 4.8,
+        stock: 20,
         shortDesc: "Kopi cappucino dengan rasa cincau yang lezat.",
         desc: "Minuman kopi cappucino yang diberi sentuhan rasa cincau yang khas, cocok untuk menikmati hari-hari yang cerah.",
         ingredients: ["Bubuk Cappucino pilihan", "Cincau", "Gula", "Es batu"],
@@ -675,6 +690,7 @@ const menuItems = [
         category: "makanan",
         price: 5000,
         rating: 4.9,
+        stock: 20,
         shortDesc: "Gyoza dengan kuah sup yang lezat.",
         desc: "Gyoza yang digoreng dan disajikan dengan kuah sup yang lezat, cocok untuk santapan utama.",
         ingredients: ["Daging cincang", "Sayuran", "Bumbu kuah"],
@@ -692,6 +708,7 @@ const menuItems = [
         category: "makanan",
         price: 5000,
         rating: 4.8,
+        stock: 20,
         shortDesc: "Cilok kenyal dengan bumbu gurih yang bikin nagih.",
         desc: "Cilok berbahan dasar tepung tapioka yang kenyal, disajikan hangat dengan bumbu gurih untuk camilan yang nikmat.",
         ingredients: ["Tepung tapioka", "Tepung terigu", "Bawang putih", "Daun bawang", "Bumbu gurih"],
@@ -708,15 +725,14 @@ const menuItems = [
         category: "makanan",
         price: 0,
         rating: 5,
+        stock: 0,
         shortDesc: "Segera hadir untuk melengkapi pilihan favoritmu.",
         desc: "Menu spesial baru dari Penagisa Food Corner sedang dipersiapkan untuk kamu.",
         ingredients: [],
         highlight: "Nantikan kejutan menu baru kami.",
         comingSoon: true,
         images: [
-            "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80"
+            "specialcoming.jpg"
         ]
     },
     {
@@ -725,15 +741,14 @@ const menuItems = [
         category: "minuman",
         price: 0,
         rating: 5,
+        stock: 0,
         shortDesc: "Kesegaran baru yang segera hadir untukmu.",
         desc: "Minuman spesial baru dengan rasa segar sedang dipersiapkan oleh Penagisa Food Corner.",
         ingredients: [],
         highlight: "Nantikan minuman baru yang menyegarkan.",
         comingSoon: true,
         images: [
-            "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80"
+            "escoming.jpg"
         ]
     },
     {
@@ -742,18 +757,87 @@ const menuItems = [
         category: "makanan",
         price: 0,
         rating: 5,
+        stock: 0,
         shortDesc: "Seblak gurih pedas yang segera hadir.",
         desc: "Seblak komplit dengan isian pilihan dan kuah pedas gurih sedang dipersiapkan untuk kamu.",
         ingredients: [],
         highlight: "Nantikan sensasi pedas gurih dengan isian yang lebih lengkap.",
         comingSoon: true,
         images: [
-            "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=900&q=80",
-            "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80"
+            "seblakcoming.webp"
         ]
     }
 ];
+
+function getProductStocks() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(PRODUCT_STOCKS_KEY));
+        return stored && typeof stored === 'object' ? stored : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function getProductStock(item) {
+    const stocks = getProductStocks();
+    const configuredStock = stocks[item.id];
+    const stock = configuredStock === undefined ? item.stock : configuredStock;
+    return Math.max(0, Math.floor(Number(stock) || 0));
+}
+
+function saveProductStocks(stocks) {
+    localStorage.setItem(PRODUCT_STOCKS_KEY, JSON.stringify(stocks));
+}
+
+function setProductStock(itemId, value) {
+    const item = menuItems.find(menuItem => menuItem.id === Number(itemId));
+    if (!item) return;
+
+    const stocks = getProductStocks();
+    stocks[item.id] = Math.max(0, Math.floor(Number(value) || 0));
+    saveProductStocks(stocks);
+    renderAdminStock();
+    refreshRenderedStockDisplay();
+}
+
+function changeAdminStock(itemId, delta) {
+    const item = menuItems.find(menuItem => menuItem.id === Number(itemId));
+    if (!item) return;
+    setProductStock(item.id, getProductStock(item) + delta);
+}
+
+function decrementProductStocks(items) {
+    const stocks = getProductStocks();
+    items.forEach((orderedItem) => {
+        const item = menuItems.find(menuItem => menuItem.id === orderedItem.product_id);
+        if (!item) return;
+        stocks[item.id] = Math.max(0, getProductStock(item) - orderedItem.quantity);
+    });
+    saveProductStocks(stocks);
+    refreshRenderedStockDisplay();
+}
+
+function renderAdminStock() {
+    const list = document.getElementById('adminStockList');
+    if (!list) return;
+
+    list.innerHTML = menuItems.filter(item => !item.comingSoon).map((item) => {
+        const stock = getProductStock(item);
+        return `
+            <div class="admin-stock-row">
+                <div class="admin-stock-info">
+                    <strong>${item.name}</strong>
+                    <span>${stock > 0 ? `${stock} tersedia` : 'Stok habis'}</span>
+                </div>
+                <div class="admin-stock-controls">
+                    <button type="button" class="admin-stock-adjust" onclick="changeAdminStock(${item.id}, -1)" aria-label="Kurangi stok ${item.name}">-</button>
+                    <input type="number" min="0" value="${stock}" aria-label="Stok ${item.name}" onchange="setProductStock(${item.id}, this.value)">
+                    <button type="button" class="admin-stock-adjust" onclick="changeAdminStock(${item.id}, 1)" aria-label="Tambah stok ${item.name}">+</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
 
 // Ambil Keranjang dari localStorage agar tidak hilang saat pindah halaman
 let cart = JSON.parse(localStorage.getItem('umkm_cart')) || {};
@@ -792,8 +876,10 @@ function renderMenu(items) {
     }
 
     items.forEach((item, index) => {
+        const stock = item.comingSoon ? 0 : getProductStock(item);
         const card = document.createElement("div");
         card.className = `menu-card${item.comingSoon ? ' coming-soon-card' : ''}`;
+        card.dataset.productId = item.id;
         card.style.setProperty('--delay', `${index * 120}ms`);
         card.innerHTML = `
             <div class="card-img-wrapper">
@@ -812,10 +898,13 @@ function renderMenu(items) {
                     ${item.comingSoon ? `
                         <span class="coming-soon-label"><i class="fa-solid fa-clock"></i> Segera Hadir</span>
                     ` : `
-                        <span class="card-price">Rp ${item.price.toLocaleString('id-ID')}</span>
+                        <div class="card-product-meta">
+                            <span class="card-price">Rp ${item.price.toLocaleString('id-ID')}</span>
+                            <span class="card-stock${stock === 0 ? ' is-empty' : ''}">Stok: ${stock}</span>
+                        </div>
                         <div class="menu-actions">
                             <a href="review.html?menu=${encodeURIComponent(item.name)}" class="review-btn">Review</a>
-                            <button class="add-btn" data-id="${item.id}">+ Tambah</button>
+                            <button class="add-btn" data-id="${item.id}"${stock === 0 ? ' disabled' : ''}>${stock === 0 ? 'Stok Habis' : '+ Tambah'}</button>
                         </div>
                     `}
                 </div>
@@ -840,12 +929,39 @@ function renderMenu(items) {
     });
 }
 
+function refreshRenderedStockDisplay() {
+    document.querySelectorAll('.menu-card[data-product-id]').forEach((card) => {
+        const item = menuItems.find(menuItem => menuItem.id === Number(card.dataset.productId));
+        if (!item || item.comingSoon) return;
+
+        const stock = getProductStock(item);
+        const stockLabel = card.querySelector('.card-stock');
+        const addButton = card.querySelector('.add-btn');
+        if (stockLabel) {
+            stockLabel.textContent = `Stok: ${stock}`;
+            stockLabel.classList.toggle('is-empty', stock === 0);
+        }
+        if (addButton) {
+            addButton.disabled = stock === 0;
+            addButton.textContent = stock === 0 ? 'Stok Habis' : '+ Tambah';
+        }
+    });
+}
+
 // LOGIKA TAMBAH & EDIT KERANJANG
 function addToCart(id) {
     const item = menuItems.find(menuItem => menuItem.id === id);
     if (!item) return;
 
-    cart[id] = (cart[id] || 0) + 1;
+    const currentQuantity = cart[id] || 0;
+    const stock = getProductStock(item);
+    if (currentQuantity >= stock) {
+        showInlineAlert(stock > 0 ? `Stok ${item.name} hanya tersisa ${stock}.` : `${item.name} sedang habis.`);
+        refreshRenderedStockDisplay();
+        return;
+    }
+
+    cart[id] = currentQuantity + 1;
     saveAndRefreshCart();
     refreshCartActivity();
     showCartAddNotification(item.name, cart[id]);
@@ -871,6 +987,11 @@ function showCartAddNotification(itemName, quantity) {
 
 function changeQty(id, delta) {
     if (cart[id]) {
+        const item = menuItems.find(menuItem => menuItem.id == id);
+        if (delta > 0 && item && cart[id] >= getProductStock(item)) {
+            showInlineAlert(`Stok ${item.name} sudah maksimal di keranjang.`);
+            return;
+        }
         cart[id] += delta;
         if (cart[id] <= 0) delete cart[id];
     }
@@ -1784,6 +1905,18 @@ async function completeOrder() {
         };
     });
 
+    const unavailableItem = orderItems.find((orderItem) => {
+        const item = menuItems.find(menuItem => menuItem.id === orderItem.product_id);
+        return !item || orderItem.quantity > getProductStock(item);
+    });
+    if (unavailableItem) {
+        showInlineAlert(`Stok ${unavailableItem.product_name} tidak mencukupi. Perbarui jumlah pesanan terlebih dahulu.`);
+        orderSubmissionInProgress = false;
+        if (actionButton) actionButton.disabled = false;
+        refreshRenderedStockDisplay();
+        return;
+    }
+
     let total = 0;
     Object.keys(cart).forEach((id) => {
         const item = menuItems.find(m => m.id == id);
@@ -1838,6 +1971,7 @@ async function completeOrder() {
         return;
     }
 
+    decrementProductStocks(orderItems);
     const orderedProducts = orderItems.map((item) => item.product_name);
     const purchasedProducts = JSON.parse(localStorage.getItem(PURCHASED_PRODUCTS_KEY)) || [];
     localStorage.setItem(PURCHASED_PRODUCTS_KEY, JSON.stringify([
@@ -2045,6 +2179,7 @@ function unlockAdminDashboard() {
     renderAdminReviews();
     renderAdminFeedback();
     renderAdminStats();
+    renderAdminStock();
     loadAdminComments();
     loadAdminFeedback();
     loadAdminDatabaseData();
@@ -2062,6 +2197,7 @@ function initAdminPage() {
         renderAdminReviews();
         renderAdminFeedback();
         renderAdminStats();
+        renderAdminStock();
         loadAdminComments();
         loadAdminFeedback();
         loadAdminDatabaseData();
