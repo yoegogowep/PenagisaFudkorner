@@ -8835,6 +8835,43 @@ body.ordering-page .categories .cat-btn:focus-visible {
     }
 }
 
+@media (max-width: 599px) {
+    .menu-card,
+    .galeri-set,
+    .home-favorite-card {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .menu-card:hover,
+    .galeri-set:hover,
+    .home-favorite-card:hover {
+        box-shadow: var(--shadow-sm) !important;
+        transform: none !important;
+    }
+
+    .card-img-wrapper img,
+    .galeri-photo img,
+    .home-favorite-card img {
+        transition: none !important;
+    }
+
+    .modal-backdrop,
+    .payment-modal-backdrop,
+    .payment-proof-modal-backdrop,
+    .refund-request-backdrop,
+    .review-order-modal-backdrop,
+    .admin-data-backdrop,
+    .admin-confirm-backdrop {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    .home-hero-slider {
+        transition-duration: 0.45s;
+    }
+}
+
 button.cart-icon-btn:not(.star-btn),
 button.order-status-icon-btn:not(.star-btn) {
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.14) 48%, rgba(255, 255, 255, 0.32)) !important;

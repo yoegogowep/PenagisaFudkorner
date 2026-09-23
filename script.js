@@ -885,7 +885,7 @@ function renderMenu(items) {
             <div class="card-img-wrapper">
                 ${item.comingSoon
                     ? `<div class="coming-soon-thumbnail" style="--coming-soon-image: url('${item.images[0]}')" aria-label="Menu segera hadir"><span>?</span></div>`
-                    : `<img src="${item.images[0]}" alt="${item.name}">`}
+                    : `<img src="${item.images[0]}" alt="${item.name}" loading="lazy" decoding="async">`}
             </div>
             <div class="card-body">
                 <h3 class="card-title">${item.name}</h3>
