@@ -34,9 +34,13 @@ create table if not exists public.feedback_messages (
     name text not null check (char_length(trim(name)) between 1 and 100),
     contact text not null check (char_length(trim(contact)) between 1 and 200),
     message text not null check (char_length(trim(message)) between 1 and 2000),
-    status text not null default 'new' check (status in ('new', 'read', 'replied')),
+    status text not null default 'pending' check (status in ('pending', 'approved', 'rejected', 'new', 'read', 'replied')),
     created_at timestamptz not null default now()
 );
+
+alter table public.feedback_messages drop constraint if exists feedback_messages_status_check;
+alter table public.feedback_messages add constraint feedback_messages_status_check check (status in ('pending', 'approved', 'rejected', 'new', 'read', 'replied'));
+update public.feedback_messages set status = 'pending' where status = 'new';
 
 create table if not exists public.sales_orders (
     id uuid primary key default gen_random_uuid(),
@@ -170,7 +174,7 @@ alter table public.feedback_messages enable row level security;
 drop policy if exists "public can submit feedback" on public.feedback_messages;
 create policy "public can submit feedback"
     on public.feedback_messages for insert
-    with check (true);
+    with check (status = 'pending');
 drop policy if exists "admin can read feedback" on public.feedback_messages;
 create policy "admin can read feedback"
     on public.feedback_messages for select
@@ -179,7 +183,7 @@ drop policy if exists "admin can update feedback" on public.feedback_messages;
 create policy "admin can update feedback"
     on public.feedback_messages for update
     using (true)
-    with check (status in ('new', 'read', 'replied'));
+    with check (status in ('pending', 'approved', 'rejected', 'new', 'read', 'replied'));
 drop policy if exists "admin can delete feedback" on public.feedback_messages;
 create policy "admin can delete feedback"
     on public.feedback_messages for delete

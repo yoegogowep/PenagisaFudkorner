@@ -107,7 +107,7 @@ async function saveFeedbackToDatabase(feedback) {
         name: feedback.name,
         contact: feedback.contact,
         message: feedback.message,
-        status: 'new'
+        status: 'pending'
     });
 
     if (error) {
@@ -753,15 +753,15 @@ const menuItems = [
     },
     {
         id: 7,
-        name: "Seblak Komplit",
+        name: "Menu Spesial Baru",
         category: "makanan",
         price: 0,
         rating: 5,
         stock: 0,
-        shortDesc: "Seblak gurih pedas yang segera hadir.",
-        desc: "Seblak komplit dengan isian pilihan dan kuah pedas gurih sedang dipersiapkan untuk kamu.",
+        shortDesc: "Segera hadir untuk melengkapi pilihan favoritmu.",
+        desc: "Menu spesial baru dari Penagisa Food Corner sedang dipersiapkan untuk kamu.",
         ingredients: [],
-        highlight: "Nantikan sensasi pedas gurih dengan isian yang lebih lengkap.",
+        highlight: "Nantikan kejutan menu baru kami.",
         comingSoon: true,
         images: [
             "seblakcoming.webp"
@@ -883,7 +883,9 @@ function renderMenu(items) {
         card.style.setProperty('--delay', `${index * 120}ms`);
         card.innerHTML = `
             <div class="card-img-wrapper">
-                <img src="${item.images[0]}" alt="${item.name}">
+                ${item.comingSoon
+                    ? `<div class="coming-soon-thumbnail" style="--coming-soon-image: url('${item.images[0]}')" aria-label="Menu segera hadir"><span>?</span></div>`
+                    : `<img src="${item.images[0]}" alt="${item.name}">`}
             </div>
             <div class="card-body">
                 <h3 class="card-title">${item.name}</h3>
@@ -1121,7 +1123,7 @@ async function sendFeedbackToDatabase(event) {
     document.getElementById('feedbackForm').reset();
 
     if (saved && supabaseClient) {
-        showInlineAlert('Kritik & saran berhasil dikirim dan tersimpan di database admin.');
+        showInlineAlert('Kritik & saran berhasil dikirim dan menunggu persetujuan admin.');
     } else if (supabaseClient) {
         showInlineAlert('Kritik & saran gagal disimpan ke database. Silakan coba lagi.');
     } else {
@@ -2288,11 +2290,45 @@ function renderAdminFeedback() {
                         <p class="admin-review-message"></p>
                         <small class="admin-review-status"></small>
                     </div>
+                    <div class="admin-review-actions"></div>
                 `;
                 row.querySelector('strong').textContent = item.name;
                 row.querySelector('.admin-review-food').textContent = item.contact;
                 row.querySelector('.admin-review-message').textContent = item.message;
-                row.querySelector('.admin-review-status').textContent = `Status: ${item.status}`;
+                const statusLabels = { pending: 'Menunggu persetujuan', new: 'Menunggu persetujuan', approved: 'Disetujui', rejected: 'Ditolak' };
+                row.querySelector('.admin-review-status').textContent = `Status: ${statusLabels[item.status] || item.status}`;
+                const actions = row.querySelector('.admin-review-actions');
+                if (['pending', 'new'].includes(item.status)) {
+                    const approveButton = document.createElement('button');
+                    approveButton.className = 'admin-review-approve';
+                    approveButton.type = 'button';
+                    approveButton.innerHTML = '<i class="fa-solid fa-check"></i> Approve';
+                    approveButton.addEventListener('click', () => updateAdminFeedbackStatus(item.id, 'approved'));
+                    actions.appendChild(approveButton);
+
+                    const declineButton = document.createElement('button');
+                    declineButton.className = 'admin-review-decline';
+                    declineButton.type = 'button';
+                    declineButton.innerHTML = '<i class="fa-solid fa-trash-can"></i> Hapus';
+                    declineButton.addEventListener('click', () => openAdminConfirm(
+                        'Hapus kritik & saran?',
+                        `Kritik & saran dari ${item.name} akan dihapus permanen.`,
+                        () => deleteAdminFeedback(item.id)
+                    ));
+                    actions.appendChild(declineButton);
+                }
+                if (!['pending', 'new'].includes(item.status)) {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'admin-review-delete';
+                    deleteButton.type = 'button';
+                    deleteButton.innerHTML = '<i class="fa-solid fa-trash-can"></i> Hapus';
+                    deleteButton.addEventListener('click', () => openAdminConfirm(
+                        'Hapus kritik & saran?',
+                        `Kritik & saran dari ${item.name} akan dihapus permanen.`,
+                        () => deleteAdminFeedback(item.id)
+                    ));
+                    actions.appendChild(deleteButton);
+                }
                 list.appendChild(row);
             });
             return;
@@ -2300,6 +2336,24 @@ function renderAdminFeedback() {
 
         list.innerHTML = '<p class="review-empty">Belum ada kritik & saran.</p>';
     });
+}
+
+async function deleteAdminFeedback(feedbackId) {
+    if (!supabaseClient || !feedbackId) return;
+
+    const { error } = await supabaseClient
+        .from('feedback_messages')
+        .delete()
+        .eq('id', feedbackId);
+
+    if (error) {
+        console.error('Kritik & saran gagal dihapus:', error);
+        showAdminToast('Gagal', 'Kritik & saran belum berhasil dihapus.');
+        return;
+    }
+
+    showAdminToast('Berhasil', 'Kritik & saran telah dihapus.');
+    await loadAdminFeedback();
 }
 
 function renderAdminReviews() {
@@ -2759,6 +2813,82 @@ function filterMenuBySearch(query) {
     renderMenu(filteredItems);
 }
 
+function setupCustomSelects() {
+    document.querySelectorAll('.form-group select').forEach((select) => {
+        if (select.dataset.customSelectReady === 'true') return;
+        select.dataset.customSelectReady = 'true';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select';
+        select.parentElement.insertBefore(wrapper, select);
+        wrapper.appendChild(select);
+        select.classList.add('custom-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'custom-select-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        const list = document.createElement('div');
+        list.className = 'custom-select-menu';
+        list.hidden = true;
+        list.setAttribute('role', 'listbox');
+
+        const closeSelect = () => {
+            wrapper.classList.remove('is-open');
+            list.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+        };
+
+        const syncValue = () => {
+            const selectedOption = select.options[select.selectedIndex];
+            trigger.textContent = selectedOption?.textContent || '';
+            list.querySelectorAll('[role="option"]').forEach((option) => {
+                const isSelected = option.dataset.value === select.value;
+                option.classList.toggle('is-selected', isSelected);
+                option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+            });
+        };
+
+        Array.from(select.options).forEach((option) => {
+            const optionButton = document.createElement('button');
+            optionButton.type = 'button';
+            optionButton.className = 'custom-select-option';
+            optionButton.dataset.value = option.value;
+            optionButton.textContent = option.textContent;
+            optionButton.setAttribute('role', 'option');
+            optionButton.addEventListener('click', () => {
+                select.value = option.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                syncValue();
+                closeSelect();
+            });
+            list.appendChild(optionButton);
+        });
+
+        trigger.addEventListener('click', () => {
+            const shouldOpen = list.hidden;
+            document.querySelectorAll('.custom-select.is-open').forEach((openWrapper) => {
+                openWrapper.querySelector('.custom-select-trigger')?.click();
+            });
+            if (shouldOpen) {
+                wrapper.classList.add('is-open');
+                list.hidden = false;
+                trigger.setAttribute('aria-expanded', 'true');
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!wrapper.contains(event.target)) closeSelect();
+        });
+
+        select.addEventListener('change', syncValue);
+        wrapper.append(trigger, list);
+        syncValue();
+    });
+}
+
 function setupMenuSearch() {
     const menuSearchInput = document.getElementById('menuSearchInput');
     if (menuSearchInput) {
@@ -2853,6 +2983,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     setupMenuSearch();
+    setupCustomSelects();
     syncRatings();
     renderMenu(menuItems);
     const menuSearchInput = document.getElementById('menuSearchInput');
@@ -3595,4 +3726,22 @@ function closeHeaderTools() {
     menu.classList.remove('is-open');
     panel.setAttribute('aria-hidden', 'true');
     toggle.setAttribute('aria-expanded', 'false');
+}
+
+async function updateAdminFeedbackStatus(feedbackId, status) {
+    if (!supabaseClient || !feedbackId) return;
+
+    const { error } = await supabaseClient
+        .from('feedback_messages')
+        .update({ status })
+        .eq('id', feedbackId);
+
+    if (error) {
+        console.error('Status kritik & saran gagal diperbarui:', error);
+        showAdminToast('Gagal', 'Status kritik & saran belum berhasil diperbarui.');
+        return;
+    }
+
+    showAdminToast('Berhasil', status === 'approved' ? 'Kritik & saran disetujui.' : 'Kritik & saran ditolak.');
+    await loadAdminFeedback();
 }

@@ -48,11 +48,11 @@
                 <a href="kontak.html" class="nav-link">Kontak</a>
             </nav>
             <button class="cart-icon-btn" id="floatingCart" type="button" aria-label="Lihat pesanan" title="Lihat pesanan">
-                <i class="fa-solid fa-basket-shopping"></i>
+                <i class="fa-solid fa-basket-shopping" aria-hidden="true"></i>
                 <span class="cart-badge" id="nav-cart-count">0</span>
             </button>
             <button class="order-status-icon-btn" id="orderStatusButton" type="button" aria-label="Lihat status pesanan" title="Lihat status pesanan" onclick="openOrderStatus()">
-                <i class="fa-solid fa-route"></i>
+                <i class="fa-solid fa-route" aria-hidden="true"></i>
                 <span class="order-status-dot" aria-hidden="true"></span>
             </button>
         </div>
@@ -230,6 +230,9 @@
             <div id="qrisStepScan">
                 <p>Scan QRIS, selesaikan pembayaran, lalu lanjutkan untuk mengunggah bukti transfer.</p>
                 <img class="qris-payment-image" src="qris.png" alt="QRIS Penagisa Food Corner">
+                <a class="qris-download-btn" href="qris.png" download="qris-penagisa-food-corner.png">
+                    <i class="fa-solid fa-download"></i> Download QRIS
+                </a>
                 <div class="payment-modal-actions payment-modal-actions-end">
                     <button class="wa-submit-btn payment-next-btn" type="button" onclick="nextQrisPaymentStep()">
                         Lanjut <i class="fa-solid fa-arrow-right"></i>
