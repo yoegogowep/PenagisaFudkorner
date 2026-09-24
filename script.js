@@ -2008,11 +2008,8 @@ async function completeOrder() {
     qrisPaymentProofFile = null;
     orderSubmissionInProgress = false;
     saveAndRefreshCart();
-    showPageLoading('Pesanan berhasil dikirim...');
-    window.setTimeout(() => {
-        hidePageLoading();
-        showOrderReviewModal(orderedProducts);
-    }, 800);
+    hidePageLoading();
+    showOrderReviewModal(orderedProducts);
     } catch (error) {
         console.error('Proses konfirmasi pesanan gagal:', error);
         showInlineAlert('Pesanan belum berhasil diproses. Silakan coba lagi.');
