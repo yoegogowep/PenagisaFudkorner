@@ -21,11 +21,11 @@ const DEFAULT_REVIEWS = [
         name: "Ipul",
         food: "Gyoza",
         rating: 5,
-        message: "Kuahnya gurih, gyozanya lembut, dan porsinya pas untuk makan siang."
+        message: "Gyozanya gurih, lembut, dan porsinya pas untuk makan siang."
     },
     {
         name: "Fathan",
-        food: "Cilok Lava",
+        food: "Cilok",
         rating: 5,
         message: "Saus lavanya pedas dan nagih. Tekstur ciloknya juga kenyal."
     },
@@ -118,12 +118,16 @@ async function saveFeedbackToDatabase(feedback) {
     return true;
 }
 
+function isValidUuid(value) {
+    return typeof value === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(value);
+}
+
 async function saveRefundRequestToDatabase(refund) {
     const payload = {
         order_id: refund.order_id,
         customer_name: refund.customer_name || 'Pelanggan',
         refund_reason: refund.refund_reason,
-        refund_total: Number(refund.refund_total || 0),
+        refund_total: Number(refund.order_total || 0),
         attachment_url: refund.attachment_url || null,
         status: 'pending',
         admin_note: null,
@@ -132,26 +136,29 @@ async function saveRefundRequestToDatabase(refund) {
     };
 
     if (!supabaseClient) {
-        const stored = JSON.parse(localStorage.getItem(REFUND_REQUESTS_KEY) || '[]');
-        const record = {
-            id: `local-refund-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-            ...payload,
-            created_at: payload.created_at,
-            reviewed_at: null,
-            status: 'pending'
+        return {
+            ok: false,
+            message: 'Database belum terhubung. Hubungkan Supabase lalu coba lagi.'
         };
-        stored.unshift(record);
-        localStorage.setItem(REFUND_REQUESTS_KEY, JSON.stringify(stored));
-        return record;
+    }
+
+    if (!isValidUuid(refund.order_id)) {
+        return {
+            ok: false,
+            message: 'Pesanan ini belum terhubung ke database. Buat pesanan baru sebelum mengajukan refund.'
+        };
     }
 
     const { data, error } = await supabaseClient.from('order_refunds').insert(payload).select('id').single();
     if (error || !data) {
         console.error('Permintaan refund gagal disimpan:', error);
-        return false;
+        return {
+            ok: false,
+            message: error?.message || 'Data refund tidak dapat disimpan ke database.'
+        };
     }
 
-    return { id: data.id, ...payload };
+    return { id: data.id, ...payload, ok: true };
 }
 
 async function loadCommentsFromDatabase() {
@@ -355,9 +362,7 @@ function closeRefundRequestModal() {
     if (input) input.value = '';
     if (fileName) fileName.textContent = 'Pilih foto makanan yang rusak/kurang sesuai';
     const reasonInput = document.getElementById('refundReason');
-    const totalInput = document.getElementById('refundAmount');
     if (reasonInput) reasonInput.value = '';
-    if (totalInput) totalInput.value = '';
 }
 
 function openRefundRequestModal(orderId) {
@@ -374,8 +379,6 @@ function openRefundRequestModal(orderId) {
     if (orderCode) orderCode.textContent = `Kode pesanan #${String(orderId).slice(0, 8).toUpperCase()}`;
     if (orderTotal) orderTotal.textContent = `Rp ${Number(targetOrder.total_amount || 0).toLocaleString('id-ID')}`;
     if (orderInfo) orderInfo.textContent = `${targetOrder.order_type === 'Takeaway' ? 'Ambil sendiri' : 'Diantar'} • ${targetOrder.items?.map((item) => `${item.product_name} x${item.quantity}`).join(', ') || 'Pesanan'}`;
-    const amountInput = document.getElementById('refundAmount');
-    if (amountInput) amountInput.value = Number(targetOrder.total_amount || 0);
     const fileName = document.getElementById('refundAttachmentFileName');
     if (fileName) fileName.textContent = 'Pilih foto makanan yang rusak/kurang sesuai';
     refundAttachmentFile = null;
@@ -401,34 +404,36 @@ function handleRefundAttachmentSelected(event) {
 async function submitRefundRequest() {
     const orderId = document.getElementById('refundOrderId')?.value;
     const reason = document.getElementById('refundReason')?.value.trim();
-    const total = Number(document.getElementById('refundAmount')?.value || 0);
-    if (!orderId || !reason || !Number.isFinite(total) || total <= 0) {
-        showInlineAlert('Lengkapi alasan refund dan total refund yang valid.');
+    const targetOrder = getUserLocalOrders().find((order) => order.id === orderId);
+    const total = Number(targetOrder?.total_amount || 0);
+
+    if (!orderId || !reason || !targetOrder || !Number.isFinite(total) || total <= 0) {
+        showInlineAlert('Lengkapi alasan refund dan pastikan pesanan yang dipilih valid.');
         return;
     }
 
-    const targetOrder = getUserLocalOrders().find((order) => order.id === orderId);
-    if (!targetOrder || !isOrderCompletedStatus(targetOrder.status)) {
+    if (!isOrderCompletedStatus(targetOrder.status)) {
         showInlineAlert('Refund hanya bisa diajukan untuk pesanan yang sudah selesai.');
         return;
     }
 
     let attachmentUrl = '';
-    if (refundAttachmentFile) {
-        const proofName = refundAttachmentFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const proofPath = `refund-attachments/${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}-${proofName}`;
-        if (supabaseClient) {
+    if (refundAttachmentFile && supabaseClient) {
+        try {
+            const proofName = refundAttachmentFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const proofPath = `${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}-${proofName}`;
             const { error: uploadError } = await supabaseClient.storage.from('refund-attachments').upload(proofPath, refundAttachmentFile, {
                 cacheControl: '3600',
                 upsert: false,
                 contentType: refundAttachmentFile.type
             });
             if (uploadError) {
-                console.error('Foto refund gagal diunggah:', uploadError);
-                showInlineAlert('Foto refund gagal diunggah. Coba lagi setelah bucket refund-attachments dibuat.');
-                return;
+                console.warn('Foto refund tidak bisa diunggah, dilewati karena attachment bersifat opsional:', uploadError);
+            } else {
+                attachmentUrl = supabaseClient.storage.from('refund-attachments').getPublicUrl(proofPath).data.publicUrl;
             }
-            attachmentUrl = supabaseClient.storage.from('refund-attachments').getPublicUrl(proofPath).data.publicUrl;
+        } catch (error) {
+            console.warn('Foto refund tidak bisa diproses, dilewati karena attachment bersifat opsional:', error);
         }
     }
 
@@ -436,7 +441,7 @@ async function submitRefundRequest() {
         order_id: orderId,
         customer_name: targetOrder.customer_name || 'Pelanggan',
         refund_reason: reason,
-        refund_total: total,
+        order_total: total,
         attachment_url: attachmentUrl,
         status: 'pending',
         admin_note: null,
@@ -444,8 +449,9 @@ async function submitRefundRequest() {
     };
 
     const saved = await saveRefundRequestToDatabase(refundRequest);
-    if (!saved) {
-        showInlineAlert('Permintaan refund gagal dikirim. Coba lagi nanti.');
+    if (!saved?.ok) {
+        console.error('Permintaan refund gagal dikirim:', saved?.message);
+        showInlineAlert(`Permintaan refund gagal dikirim. ${saved?.message || 'Silakan coba lagi.'}`);
         return;
     }
 
@@ -691,9 +697,9 @@ const menuItems = [
         price: 5000,
         rating: 4.9,
         stock: 20,
-        shortDesc: "Gyoza dengan kuah sup yang lezat.",
-        desc: "Gyoza yang digoreng dan disajikan dengan kuah sup yang lezat, cocok untuk santapan utama.",
-        ingredients: ["Daging cincang", "Sayuran", "Bumbu kuah"],
+        shortDesc: "Gyoza dengan isian gurih yang lezat.",
+        desc: "Gyoza yang digoreng dengan isian gurih, cocok untuk santapan utama.",
+        ingredients: ["Daging cincang", "Sayuran", "Bumbu gurih"],
         highlight: "Berserat lezat, cocok untuk makan siang atau malam dengan porsi yang mengenyangkan.",
         images: [
             "gyoza1.jpeg",
@@ -3476,9 +3482,9 @@ function setupHamburgerNavigation() {
 }
 
 async function loadRefundRequestsFromDatabase() {
+    const localRequests = getRefundRequestsLocal().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
     if (!supabaseClient) {
-        const stored = getRefundRequestsLocal();
-        return stored.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        return localRequests;
     }
 
     const { data, error } = await supabaseClient
@@ -3488,17 +3494,24 @@ async function loadRefundRequestsFromDatabase() {
 
     if (error) {
         console.error('Refund database gagal dimuat:', error);
-        return getRefundRequestsLocal();
+        return localRequests;
     }
 
-    return data || [];
+    const databaseRequests = Array.isArray(data) ? data : [];
+    const databaseIds = new Set(databaseRequests.map((request) => String(request.id)));
+    const mergedRequests = [
+        ...databaseRequests,
+        ...localRequests.filter((request) => !databaseIds.has(String(request.id)))
+    ];
+
+    return mergedRequests.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 }
 
 async function renderRefundRequests() {
     const list = document.getElementById('adminRefundRequestList');
     if (!list) return;
 
-    const requests = supabaseClient ? await loadRefundRequestsFromDatabase() : getRefundRequestsLocal();
+    const requests = await loadRefundRequestsFromDatabase();
     if (!requests.length) {
         list.innerHTML = '<p class="admin-empty-state">Belum ada permintaan refund.</p>';
         return;
@@ -3510,10 +3523,10 @@ async function renderRefundRequests() {
                 <strong>${request.customer_name || 'Pelanggan'}</strong>
                 <span class="admin-refund-status admin-refund-status-${request.status || 'pending'}">${request.status === 'approved' ? 'Disetujui' : request.status === 'rejected' ? 'Ditolak' : 'Menunggu'}</span>
             </div>
-            <p>Pesanan #${String(request.order_id || '').slice(0, 8).toUpperCase()} • Rp ${Number(request.refund_total || 0).toLocaleString('id-ID')}</p>
+            <p>Pesanan #${String(request.order_id || '').slice(0, 8).toUpperCase()} • Harga pesanan Rp ${Number(request.refund_total || request.order_total || 0).toLocaleString('id-ID')}</p>
             <p>${request.refund_reason || '-'}</p>
             ${request.attachment_url ? `<a href="${request.attachment_url}" target="_blank" rel="noreferrer" class="admin-refund-attachment">Lihat foto</a>` : ''}
-            ${supabaseClient && (request.status || 'pending') === 'pending' ? `
+            ${(request.status || 'pending') === 'pending' ? `
                 <div class="admin-refund-actions">
                     <button type="button" class="admin-refund-btn admin-refund-btn-approve" data-refund-id="${request.id}" data-action="approve">Setujui</button>
                     <button type="button" class="admin-refund-btn admin-refund-btn-reject" data-refund-id="${request.id}" data-action="reject">Tolak</button>
@@ -3522,24 +3535,22 @@ async function renderRefundRequests() {
         </div>
     `).join('');
 
-    if (supabaseClient) {
-        list.querySelectorAll('[data-action]').forEach((button) => {
-            const refundId = button.dataset.refundId;
-            const action = button.dataset.action;
-            button.addEventListener('click', () => {
-                if (action === 'approve') {
-                    approveRefundRequest(refundId);
-                } else {
-                    rejectRefundRequest(refundId);
-                }
-            });
+    list.querySelectorAll('[data-action]').forEach((button) => {
+        const refundId = button.dataset.refundId;
+        const action = button.dataset.action;
+        button.addEventListener('click', () => {
+            if (action === 'approve') {
+                approveRefundRequest(refundId);
+            } else {
+                rejectRefundRequest(refundId);
+            }
         });
-    }
+    });
 }
 
 async function approveRefundRequest(refundId) {
     if (!refundId) return;
-    if (!supabaseClient) {
+    if (!supabaseClient || !isValidUuid(refundId)) {
         const stored = getRefundRequestsLocal();
         const target = stored.find((request) => request.id === refundId);
         if (!target) return;
@@ -3551,8 +3562,8 @@ async function approveRefundRequest(refundId) {
         return;
     }
 
-    const { error } = await supabaseClient.from('order_refunds').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', refundId);
-    if (error) {
+    const { data, error } = await supabaseClient.from('order_refunds').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', refundId).select('id, status').single();
+    if (error || !data) {
         console.error('Persetujuan refund gagal:', error);
         showAdminToast('Gagal', 'Refund belum berhasil disetujui.');
         return;
@@ -3564,7 +3575,7 @@ async function approveRefundRequest(refundId) {
 
 async function rejectRefundRequest(refundId) {
     if (!refundId) return;
-    if (!supabaseClient) {
+    if (!supabaseClient || !isValidUuid(refundId)) {
         const stored = getRefundRequestsLocal();
         const target = stored.find((request) => request.id === refundId);
         if (!target) return;
@@ -3576,8 +3587,8 @@ async function rejectRefundRequest(refundId) {
         return;
     }
 
-    const { error } = await supabaseClient.from('order_refunds').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', refundId);
-    if (error) {
+    const { data, error } = await supabaseClient.from('order_refunds').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', refundId).select('id, status').single();
+    if (error || !data) {
         console.error('Penolakan refund gagal:', error);
         showAdminToast('Gagal', 'Refund belum berhasil ditolak.');
         return;

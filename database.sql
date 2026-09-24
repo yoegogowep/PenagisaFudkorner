@@ -88,6 +88,15 @@ create table if not exists public.order_refunds (
     reviewed_at timestamptz
 );
 
+alter table public.order_refunds add column if not exists customer_name text;
+alter table public.order_refunds add column if not exists refund_reason text;
+alter table public.order_refunds add column if not exists refund_total numeric(12, 2) default 0;
+alter table public.order_refunds add column if not exists attachment_url text;
+alter table public.order_refunds add column if not exists status text default 'pending';
+alter table public.order_refunds add column if not exists admin_note text;
+alter table public.order_refunds add column if not exists created_at timestamptz default now();
+alter table public.order_refunds add column if not exists reviewed_at timestamptz;
+
 create index if not exists comments_created_at_idx on public.comments (created_at desc);
 create index if not exists feedback_messages_created_at_idx on public.feedback_messages (created_at desc);
 create index if not exists link_clicks_clicked_at_idx on public.link_clicks (clicked_at desc);

@@ -187,7 +187,7 @@
             <p id="refundOrderInfo" class="refund-order-info">-</p>
             <div class="refund-request-form">
                 <label>
-                    <span>Foto makanan</span>
+                    <span>Foto makanan (opsional)</span>
                     <label class="payment-proof-upload refund-proof-upload">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                         <span id="refundAttachmentFileName">Pilih foto makanan yang rusak/kurang sesuai</span>
@@ -198,13 +198,8 @@
                     <span>Alasan refund</span>
                     <textarea id="refundReason" rows="4" placeholder="Contoh: makanan datang dalam kondisi tidak sesuai, rasa kurang, atau kualitas tidak seperti yang dijanjikan."></textarea>
                 </label>
-                <label>
-                    <span>Total refund yang diminta</span>
-                    <input id="refundAmount" type="number" min="1000" step="1000" placeholder="Masukkan total refund">
-                </label>
             </div>
             <div class="refund-request-actions">
-                <button type="button" class="payment-secondary-btn" onclick="closeRefundRequestModal()">Batal</button>
                 <button type="button" class="wa-submit-btn" onclick="submitRefundRequest()">Kirim permintaan</button>
             </div>
         </div>
