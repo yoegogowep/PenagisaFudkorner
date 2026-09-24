@@ -1674,10 +1674,21 @@ function updateOrderTypeFields() {
     }
 
     if (paymentMethod) {
-        paymentMethod.innerHTML = isDelivery
-            ? '<option value="">Pilih metode pembayaran</option><option value="QRIS">QRIS</option><option value="COD">COD / Bayar di tempat</option>'
-            : '<option value="Bayar di kasir">Bayar di kasir</option>';
-        paymentMethod.value = isDelivery ? paymentMethod.value || '' : 'Bayar di kasir';
+        const selectedPaymentMethod = paymentMethod.value;
+        const cashPaymentValue = 'COD';
+        const cashPaymentLabel = isDelivery ? 'COD / Bayar di tempat' : 'Bayar di tempat';
+        paymentMethod.innerHTML = `<option value="">Pilih metode pembayaran</option><option value="QRIS">QRIS</option><option value="${cashPaymentValue}">${cashPaymentLabel}</option>`;
+        paymentMethod.value = ['QRIS', cashPaymentValue].includes(selectedPaymentMethod) ? selectedPaymentMethod : '';
+
+        const customOptions = paymentMethod.closest('.custom-select')?.querySelectorAll('.custom-select-option');
+        if (customOptions?.length === paymentMethod.options.length) {
+            customOptions.forEach((optionButton, index) => {
+                const option = paymentMethod.options[index];
+                optionButton.dataset.value = option.value;
+                optionButton.textContent = option.textContent;
+            });
+            paymentMethod.dispatchEvent(new Event('change', { bubbles: true }));
+        }
     }
 }
 
